@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.log
+.vite/
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/e2e/fixtures/*.pdf
