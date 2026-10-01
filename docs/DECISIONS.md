@@ -32,3 +32,25 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
    most recently created one.
 7. **Popover "Edit"** reopens the mark-definition dialog in edit mode (term + definition).
 8. **Import merge** compares folded surface forms unless both terms are case-sensitive.
+
+## M1
+
+- **`normRangeToRaw(n, raw, start, end)`** (not in the plan) maps a normalized range back to raw.
+  Its end is placed just after the raw character of normalized char `end - 1`, rather than at
+  `toRaw[end]`, so characters removed after a match (e.g. a line-break hyphen) are excluded.
+- **`Crop<B = unknown>`** is generic over the binary payload so `model.ts` needs no DOM `Blob`
+  type; the web app uses `Crop<Blob>`.
+- **`Pattern.priority`** (optional) breaks ties between identical token sequences; termIndex gives
+  document-scoped terms priority 1 and global terms 0. An exact pattern beats an inflected variant
+  of the same priority. On equal match length, the case-sensitive trie still wins (§5.4).
+- **Inflection follows §5.4 literally** (+s, +es, −trailing s), so e.g. `classes` does not match
+  `class`. Smarter singularization can come later.
+- **Matcher alignment.** `find()` aligns folded and cased tokens by start offset rather than array
+  index, which is robust even if the two tokenizations ever differ.
+- **Extra termIndex helpers:** `surfaceForms`, `patternTokens`, `isInScope`, `matchText` (normalize
+  both ways + tokenize + match), and `createMatcherCache` (single-entry memo keyed on the terms
+  array identity, docId and inflection option).
+- **Performance tests** live in `*.perf.test.ts`, run in `pnpm check`, and are excluded from
+  `pnpm --filter @deflink/core coverage` because instrumentation skews timings. They take the best
+  of 5 runs after a warm-up to avoid flakiness. Measured: match ~1 ms (budget 50), rebuild ~10 ms
+  (budget 20), after adding an ASCII fast path to `normalize` and lazy trie child maps.
