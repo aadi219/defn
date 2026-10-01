@@ -1,0 +1,184 @@
+:root {
+  --bg: #f4f4f2;
+  --fg: #1d1d1f;
+  --muted: #6b6b70;
+  --panel: #ffffff;
+  --border: #d9d9dc;
+  --accent: #2f5bd3;
+  --viewer-bg: #e6e6e3;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: inherit;
+  cursor: pointer;
+}
+button:hover {
+  border-color: var(--accent);
+}
+button[aria-pressed="true"] {
+  background: #e8eefc;
+  border-color: var(--accent);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.start {
+  margin: auto;
+  text-align: center;
+  padding: 2rem;
+}
+.start h1 {
+  font-size: 2.5rem;
+  margin: 0 0 0.5rem;
+}
+.hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.banner {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.banner-error {
+  background: #fdecec;
+  color: #8a1c1c;
+}
+.banner-warning {
+  background: #fff6db;
+  color: #6b4e00;
+}
+.banner button {
+  border: none;
+  background: transparent;
+}
+
+.loading-overlay,
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: rgb(255 255 255 / 0.7);
+  z-index: 10;
+}
+.drop-overlay {
+  border: 3px dashed var(--accent);
+  pointer-events: none;
+}
+
+/* Viewer */
+.viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.toolbar .spacer {
+  flex: 1;
+}
+.toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.doc-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40vw;
+}
+.zoom-level {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.page-indicator input {
+  text-align: right;
+  font: inherit;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--viewer-bg);
+  outline: none;
+}
+.pages {
+  position: relative;
+}
+.loading {
+  text-align: center;
+  color: var(--muted);
+}
+
+.page {
+  position: absolute;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
+.canvas-host,
+.text-host,
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+}
+.canvas-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.overlay-layer {
+  pointer-events: none;
+}

@@ -54,3 +54,28 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   `pnpm --filter @deflink/core coverage` because instrumentation skews timings. They take the best
   of 5 runs after a warm-up to avoid flakiness. Measured: match ~1 ms (budget 50), rebuild ~10 ms
   (budget 20), after adding an ASCII fast path to `normalize` and lazy trie child maps.
+
+## M2
+
+- **pdfjs-dist pinned to exactly 6.3.289.** API differences from older docs: `page.render` takes
+  `canvas` (not `canvasContext`); `PDFDocumentProxy` has no `destroy()`, use
+  `pdf.loadingTask.destroy()`.
+- **PDF.js runtime assets** (cmaps, standard fonts, wasm decoders, ICC profiles) are served under
+  `/pdfjs/` by a small inline Vite plugin in `apps/web/vite.config.ts` (dev middleware + copy on
+  build) instead of adding `vite-plugin-static-copy`. Standard fonts are needed because the
+  fixtures use non-embedded standard 14 fonts.
+- **Text layer CSS** is copied from `pdfjs-dist/web/pdf_viewer.css` into
+  `src/pdf/textLayer.css` rather than importing the whole viewer stylesheet. The `selecting`
+  class and `endOfContent` element from PDF.js's viewer are replicated for stable selection.
+- **Lazy rendering uses scroll math, not IntersectionObserver.** All page sizes are read up front,
+  so the visible range is a binary search over page offsets (`src/pdf/layout.ts`, unit-tested).
+  Pages within ±2 of the visible range render; pages beyond ±5 are unmounted, releasing their
+  canvas (§11).
+- **Zoom/re-render** draws into a fresh canvas and text layer and swaps them in when done, so the
+  old bitmap stays (scaled) until the new one is ready. Canvas size is capped at 16 MP.
+- **Keyboard:** ←/→ and j/k page, Home/End, +/− zoom, 0 fit width; Page Up/Down/Space scroll the
+  focused viewer. (D, P, G, U are reserved for later milestones.)
+- **Fixtures:** `pnpm fixtures` also generates `long.pdf` (300 pages, ~2.3 MB, gitignored like the
+  other generated PDFs) for manually checking lazy rendering.
+- **Web unit tests:** `apps/web` now has Vitest for pure modules (`src/**/*.test.ts`). Config files
+  are typechecked by a separate `tsconfig.node.json` with Node types.
