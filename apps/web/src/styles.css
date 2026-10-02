@@ -170,7 +170,8 @@ button[aria-pressed="true"] {
 }
 .canvas-host,
 .text-host,
-.overlay-layer {
+.overlay-layer,
+.debug-host {
   position: absolute;
   inset: 0;
 }
@@ -179,7 +180,8 @@ button[aria-pressed="true"] {
   width: 100%;
   height: 100%;
 }
-.overlay-layer {
+.overlay-layer,
+.debug-host {
   pointer-events: none;
 }
 
@@ -192,4 +194,176 @@ button[aria-pressed="true"] {
 .debug-segment-1 {
   outline-color: rgb(30 120 220 / 0.8);
   background: rgb(30 120 220 / 0.08);
+}
+
+.document-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.muted {
+  color: var(--muted);
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+kbd {
+  font:
+    0.8em ui-monospace,
+    monospace;
+  padding: 0 0.3em;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-left: 0.5em;
+  color: var(--muted);
+}
+
+/* Saved definition regions */
+.definition-region {
+  position: absolute;
+  background: rgb(255 200 0 / 0.18);
+  border-radius: 2px;
+}
+.definition-region.kind-theorem,
+.definition-region.kind-lemma,
+.definition-region.kind-proposition,
+.definition-region.kind-corollary {
+  background: rgb(60 140 255 / 0.14);
+}
+
+/* Context menu */
+.context-menu {
+  position: fixed;
+  z-index: 20;
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+}
+.context-menu button {
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+/* Toasts */
+.toasts {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 30;
+  pointer-events: none;
+}
+.toast {
+  background: #2b2b2e;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
+}
+
+/* Mark-definition dialog */
+.mark-dialog {
+  width: min(560px, calc(100vw - 2rem));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+}
+.mark-dialog::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}
+.mark-dialog h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+.mark-preview {
+  max-height: 200px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+.mark-preview img {
+  display: block;
+  max-width: 100%;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  flex: 1;
+}
+.field > span,
+.field > legend {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.field input,
+.field select {
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.field input[aria-invalid="true"] {
+  border-color: #c62828;
+}
+fieldset.field {
+  border: none;
+  padding: 0;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: center;
+}
+.field-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.checkbox {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.field-error {
+  color: #c62828;
+  margin: -0.4rem 0 0.75rem;
+  font-size: 0.9rem;
+}
+.collision {
+  background: #fff6db;
+  border: 1px solid #f0d78a;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.collision p {
+  margin: 0 0 0.5rem;
+}
+.collision-actions,
+.dialog-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
 }

@@ -91,3 +91,30 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   colours, and `__deflink.pageText(n)` in the console returns a rendered page's PageText.
 - **Known limitation:** "\n" normalizes to a space, so a match can still bridge two columns when a
   PDF's content order interleaves them line by line. Revisit if it shows up in practice.
+
+## M3
+
+- **Collision rule lives in core** (`collisions.ts`): surfaces compare by normalized token keys
+  (so "well-defined" == "well defined"), within the same scope, per decision 4.
+  `saveNewDefinition` re-checks inside its Dexie transaction and throws `TermCollisionError`.
+- **No `dexie-react-hooks`.** `state/store.tsx` is a context + `useReducer` holding all terms and
+  the current document's definitions, with an explicit `reload()` after writes. It is mounted with
+  `key={docId}`.
+- **Coordinates:** PDF.js 6 has no `convertToViewportRectangle`; `coords.ts` converts corners with
+  `convertToPdfPoint` / `convertToViewportPoint` and normalizes. The viewer keeps each page's
+  scale-1 `PageViewport` and clones it per scale, exposed via `PdfViewerHandle.getViewport`.
+- **Selection rects** come from the selected text nodes only (clipped to the range), not
+  `range.getClientRects()`, which also returns element boxes (e.g. the full-page `endOfContent`
+  helper while selecting). They are then merged per line (§6.1).
+- **Crops render only the region**: the page is rendered at scale 2 into a canvas the size of the
+  crop with a translate transform, instead of rendering the full page and copying (§6.3 step 2's
+  canvas reuse is unnecessary). Falls back to scale 1.5 over 300 KB.
+  **`Crop.width/height` are the display size at 100% zoom** (pixels ÷ render scale).
+- **Context menu** captures the selection when it opens, since clicking the menu item can clear
+  it. Global single-key shortcuts are ignored while typing or while a modal `<dialog>` is open
+  (`util/keys.ts`).
+- **Dialog** is a native `<dialog>` (`showModal`) for focus trapping and Esc. The term field
+  starts empty in M3 (suggestions arrive in M6). Collisions are detected as you type; Save is
+  disabled and replaced by "Add as another definition of X" / "Rename".
+- **Overlays:** `PdfPage` renders React overlay content (definition regions) in `.overlay-layer`;
+  the dev segment outlines moved to a separate `.debug-host` that React never renders into.
