@@ -1,7 +1,7 @@
 import { clientRectToPage } from "../../pdf/coords";
 import type { PageText } from "../../pdf/pageText";
 
-const LAYER_CLASS = "debug-layer";
+const LAYER_CLASS = "debug-host";
 
 /** Dev aid: outlines every PageText segment on the page, alternating colours. */
 export function drawSegmentOutlines(pageEl: HTMLElement, pageText: PageText): void {
@@ -33,13 +33,5 @@ export function clearSegmentOutlines(pageEl: HTMLElement): void {
 }
 
 function debugLayer(pageEl: HTMLElement): HTMLElement | null {
-  const overlay = pageEl.querySelector<HTMLElement>(".overlay-layer");
-  if (!overlay) return null;
-  let layer = overlay.querySelector<HTMLElement>(`.${LAYER_CLASS}`);
-  if (!layer) {
-    layer = document.createElement("div");
-    layer.className = LAYER_CLASS;
-    overlay.append(layer);
-  }
-  return layer;
+  return pageEl.querySelector<HTMLElement>(`.${LAYER_CLASS}`);
 }

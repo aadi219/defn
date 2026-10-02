@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, type CSSProperties } from "react";
+import { memo, useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import {
   RenderingCancelledException,
   TextLayer,
@@ -30,6 +30,8 @@ interface Props {
   /** Render (or re-render at the current scale) when true; otherwise keep what is drawn. */
   shouldRender: boolean;
   onTextLayer?: (layer: RenderedTextLayer) => void;
+  /** Rendered inside the overlay layer (no pointer events). */
+  overlay?: ReactNode;
 }
 
 /**
@@ -37,7 +39,8 @@ interface Props {
  * (e.g. after zoom) draws into fresh elements and swaps them in when done, so nothing flashes.
  */
 export const PdfPage = memo(function PdfPage(props: Props) {
-  const { pdf, pageNumber, scale, top, left, width, height, shouldRender, onTextLayer } = props;
+  const { pdf, pageNumber, scale, top, left, width, height, shouldRender, onTextLayer, overlay } =
+    props;
   const canvasHost = useRef<HTMLDivElement>(null);
   const textHost = useRef<HTMLDivElement>(null);
   const renderedScale = useRef<number | null>(null);
@@ -123,7 +126,9 @@ export const PdfPage = memo(function PdfPage(props: Props) {
   return (
     <div className="page" data-page-number={pageNumber} style={style}>
       <div className="canvas-host" ref={canvasHost} />
-      <div className="overlay-layer" />
+      <div className="overlay-layer">{overlay}</div>
+      {/* Filled imperatively by dev tools; React never renders into it. */}
+      <div className="debug-host" />
       <div className="text-host" ref={textHost} />
     </div>
   );

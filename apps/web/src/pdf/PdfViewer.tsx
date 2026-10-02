@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { PageViewport, PDFDocumentProxy } from "pdfjs-dist";
 import {
   anchorAt,
   clampScale,
@@ -18,9 +18,9 @@ import {
   offsetOf,
   PAGE_PADDING,
   visibleRange,
-  type PageSize,
   type ScrollAnchor,
 } from "./layout";
+import { shouldIgnoreShortcut } from "../util/keys";
 import { PdfPage, type RenderedTextLayer } from "./PdfPage";
 
 /** Pages within this distance of the visible range are rendered. */
@@ -33,6 +33,8 @@ type Zoom = { mode: "fitWidth" } | { mode: "manual"; scale: number };
 
 export interface PdfViewerHandle {
   scrollToPage(pageNumber: number): void;
+  /** Viewport of a page at the current scale (page CSS px <-> PDF space). */
+  getViewport(pageNumber: number): PageViewport | undefined;
 }
 
 interface Props {
@@ -40,14 +42,17 @@ interface Props {
   /** Extra toolbar content, shown at the start of the toolbar. */
   toolbarStart?: ReactNode;
   onTextLayer?: (layer: RenderedTextLayer) => void;
+  /** Content drawn in a page's non-interactive overlay layer. */
+  renderOverlay?: (pageNumber: number, viewport: PageViewport) => ReactNode;
 }
 
 export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
-  { pdf, toolbarStart, onTextLayer },
+  { pdf, toolbarStart, onTextLayer, renderOverlay },
   ref,
 ) {
   const scroller = useRef<HTMLDivElement>(null);
-  const [sizes, setSizes] = useState<PageSize[] | null>(null);
+  /** Page viewports at scale 1; they double as page sizes for layout. */
+  const [sizes, setSizes] = useState<PageViewport[] | null>(null);
   const [zoom, setZoom] = useState<Zoom>({ mode: "fitWidth" });
   const [viewport, setViewport] = useState({ scrollTop: 0, width: 0, height: 0 });
 
@@ -57,10 +62,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
     (async () => {
       const numbers = Array.from({ length: pdf.numPages }, (_, i) => i + 1);
       const result = await Promise.all(
-        numbers.map(async (n): Promise<PageSize> => {
-          const vp = (await pdf.getPage(n)).getViewport({ scale: 1 });
-          return { width: vp.width, height: vp.height };
-        }),
+        numbers.map(async (n) => (await pdf.getPage(n)).getViewport({ scale: 1 })),
       );
       if (!cancelled) setSizes(result);
     })().catch((err: unknown) => console.error("Failed to read page sizes", err));
@@ -98,6 +100,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
   }, [sizes, zoom, viewport.width]);
 
   const layout = useMemo(() => computeLayout(sizes ?? [], scale), [sizes, scale]);
+  const viewports = useMemo(() => sizes?.map((v) => v.clone({ scale })) ?? [], [sizes, scale]);
   const [first, last] = visibleRange(layout, viewport.scrollTop, viewport.height);
   const centerIndex = anchorAt(layout, viewport.scrollTop + viewport.height / 2).index;
   const pageCount = pdf.numPages;
@@ -126,7 +129,11 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
     },
     [layout, pageCount],
   );
-  useImperativeHandle(ref, () => ({ scrollToPage }), [scrollToPage]);
+  useImperativeHandle(
+    ref,
+    () => ({ scrollToPage, getViewport: (pageNumber) => viewports[pageNumber - 1] }),
+    [scrollToPage, viewports],
+  );
 
   const zoomBy = useCallback(
     (factor: number) => setZoom({ mode: "manual", scale: clampScale(scale * factor) }),
@@ -136,7 +143,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
   // Keyboard: arrows / j k page, Home / End, + - zoom, 0 fit width.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target)) return;
+      if (shouldIgnoreShortcut(e)) return;
       const current = centerIndex + 1;
       const actions: Record<string, () => void> = {
         ArrowRight: () => scrollToPage(current + 1),
@@ -203,6 +210,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
           height={layout.heights[i]!}
           shouldRender={i >= first - RENDER_MARGIN && i <= last + RENDER_MARGIN}
           onTextLayer={onTextLayer}
+          overlay={renderOverlay?.(i + 1, viewports[i]!)}
         />,
       );
     }
@@ -265,12 +273,5 @@ function PageIndicator(props: { current: number; count: number; onGo: (page: num
       />
       <span> / {count}</span>
     </form>
-  );
-}
-
-function isTyping(target: EventTarget | null): boolean {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
   );
 }
