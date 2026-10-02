@@ -7,19 +7,24 @@ import {
   type CapturedSelection,
   type CaptureResult,
 } from "./features/markDefinition/captureSelection";
+import { OccurrenceUnderlines } from "./features/linking/OccurrenceUnderlines";
+import { useLinking } from "./features/linking/useLinking";
 import { DefinitionRegions } from "./features/markDefinition/DefinitionRegions";
 import {
   MarkDefinitionDialog,
   type MarkDefinitionValues,
   type SaveTarget,
 } from "./features/markDefinition/MarkDefinitionDialog";
+import { DefinitionPopover } from "./features/popover/DefinitionPopover";
+import { useHoverPopover } from "./features/popover/useHoverPopover";
 import { useToast } from "./features/toast/toast";
+import { unionPdfRects } from "./pdf/coords";
 import { renderCrop, type CropImage } from "./pdf/crop";
 import type { LoadedPdf } from "./pdf/loadDocument";
 import { PdfViewer, type PdfViewerHandle } from "./pdf/PdfViewer";
-import { usePageTexts } from "./pdf/usePageTexts";
+import { usePageTexts, type PageTextEntry } from "./pdf/usePageTexts";
 import { useStore } from "./state/store";
-import { saveNewDefinition, TermCollisionError } from "./store/repo";
+import { addSuppression, saveNewDefinition, TermCollisionError } from "./store/repo";
 import { shouldIgnoreShortcut } from "./util/keys";
 
 interface Draft {
@@ -38,10 +43,37 @@ interface Props {
 /** An open document: the viewer plus the per-document features layered on it. */
 export function DocumentView({ doc, toolbarStart }: Props) {
   const viewer = useRef<PdfViewerHandle>(null);
+  const root = useRef<HTMLDivElement>(null);
   const toast = useToast();
-  const { terms, definitions, reload } = useStore();
+  const { terms, definitions, suppressions, reload } = useStore();
   const [debugSegments, setDebugSegments] = useState(false);
-  const { onTextLayer } = usePageTexts(debugSegments);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  // Page text feeds linking; the ref breaks the cycle between the two hooks.
+  const linkPageRef = useRef<((entry: PageTextEntry) => void) | null>(null);
+  const onPageText = useCallback((entry: PageTextEntry) => linkPageRef.current?.(entry), []);
+  const { onTextLayer, liveEntries } = usePageTexts(debugSegments, onPageText);
+  const { byPage: occurrencesByPage, linkPage } = useLinking(
+    { docId: doc.docId, terms, definitions, suppressions },
+    liveEntries,
+  );
+  useEffect(() => {
+    linkPageRef.current = linkPage;
+  }, [linkPage]);
+
+  const termsById = useMemo(() => new Map(terms.map((t) => [t.id, t])), [terms]);
+
+  /** Occurrences on a page, only if laid out at the page's current scale. */
+  const getOccurrences = useCallback(
+    (page: number) => {
+      const linked = occurrencesByPage.get(page);
+      const scale = viewer.current?.getViewport(page)?.scale;
+      return linked && linked.scale === scale ? linked.occurrences : undefined;
+    },
+    [occurrencesByPage],
+  );
+  const { target: popover, close: closePopover } = useHoverPopover(root, getOccurrences);
+  const popoverTerm = popover ? termsById.get(popover.occurrence.termId) : undefined;
   const [draft, setDraft] = useState<Draft | null>(null);
   /** Open context menu, with the selection captured when it opened. */
   const [menu, setMenu] = useState<{ x: number; y: number; capture: CaptureResult } | null>(null);
@@ -55,10 +87,69 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   const renderOverlay = useCallback(
     (pageNumber: number, viewport: PageViewport) => {
       const defs = definitionsByPage.get(pageNumber);
-      return defs ? <DefinitionRegions definitions={defs} viewport={viewport} /> : null;
+      const linked = occurrencesByPage.get(pageNumber);
+      return (
+        <>
+          {defs && <DefinitionRegions definitions={defs} viewport={viewport} flashId={flash} />}
+          {linked && linked.scale === viewport.scale && (
+            <OccurrenceUnderlines occurrences={linked.occurrences} />
+          )}
+        </>
+      );
     },
-    [definitionsByPage],
+    [definitionsByPage, occurrencesByPage, flash],
   );
+
+  const goToSource = useCallback(
+    (definition: Definition) => {
+      const rect = unionPdfRects(definition.rects);
+      if (!rect) return;
+      closePopover();
+      viewer.current?.scrollToPdfRect(definition.page, rect);
+      setFlash(definition.id);
+    },
+    [closePopover],
+  );
+  useEffect(() => {
+    if (!flash) return;
+    const id = window.setTimeout(() => setFlash(null), 1600);
+    return () => window.clearTimeout(id);
+  }, [flash]);
+
+  const suppressPopoverOccurrence = useCallback(async () => {
+    if (!popover) return;
+    closePopover();
+    try {
+      await addSuppression({
+        termId: popover.occurrence.termId,
+        docId: doc.docId,
+        page: popover.page,
+        offset: popover.occurrence.start,
+      });
+      await reload();
+      toast("This occurrence will no longer be linked.");
+    } catch (err) {
+      console.error(err);
+      toast(`Could not save: ${String(err)}`);
+    }
+  }, [popover, closePopover, doc.docId, reload, toast]);
+
+  // G: go to the source of the open popover's term (first definition in this document).
+  useEffect(() => {
+    if (!popover) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (shouldIgnoreShortcut(e) || (e.key !== "g" && e.key !== "G")) return;
+      const first = definitions
+        .filter((d) => d.termId === popover.occurrence.termId)
+        .sort((a, b) => a.page - b.page)[0];
+      if (first) {
+        e.preventDefault();
+        goToSource(first);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [popover, definitions, goToSource]);
 
   const capture = useCallback(() => captureSelection((n) => viewer.current?.getViewport(n)), []);
 
@@ -193,7 +284,7 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   }, [menu]);
 
   return (
-    <div className="document-view" onContextMenu={onContextMenu}>
+    <div className="document-view" ref={root} onContextMenu={onContextMenu}>
       <PdfViewer
         ref={viewer}
         pdf={doc.pdf}
@@ -215,6 +306,15 @@ export function DocumentView({ doc, toolbarStart }: Props) {
           </>
         }
       />
+      {popover && popoverTerm && (
+        <DefinitionPopover
+          term={popoverTerm}
+          docId={doc.docId}
+          anchor={popover}
+          onGoToSource={goToSource}
+          onSuppress={() => void suppressPopoverOccurrence()}
+        />
+      )}
       {menu && (
         <ul className="context-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
           <li role="none">

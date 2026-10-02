@@ -367,3 +367,99 @@ fieldset.field {
   justify-content: flex-end;
   margin-top: 1rem;
 }
+
+/* Linked occurrences */
+.occurrence-underline {
+  position: absolute;
+  border-bottom: 1.5px dotted var(--link-underline, rgb(47 91 211 / 0.85));
+  box-sizing: border-box;
+}
+.document-view.over-occurrence .textLayer span {
+  cursor: help;
+}
+.definition-region.flash {
+  animation: region-flash 1.6s ease-out;
+}
+@keyframes region-flash {
+  0%,
+  40% {
+    background: rgb(255 170 0 / 0.55);
+    box-shadow: 0 0 0 3px rgb(255 170 0 / 0.5);
+  }
+}
+
+/* Definition popover */
+.definition-popover {
+  z-index: 15;
+  width: max-content;
+  min-width: 260px;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.2);
+  padding: 0.6rem 0.75rem;
+}
+.popover-header,
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.kind-badge {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  background: #fff1c2;
+  color: #6b4e00;
+}
+.kind-badge.kind-theorem,
+.kind-badge.kind-lemma,
+.kind-badge.kind-proposition,
+.kind-badge.kind-corollary {
+  background: #dde8ff;
+  color: #1d3f91;
+}
+.def-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.definition-card + .definition-card {
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+.definition-card .crop img {
+  display: block;
+  background: #fff;
+}
+.definition-card .source {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.link-button {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  font-size: inherit;
+}
+.other-definitions {
+  margin-top: 0.5rem;
+}
+.other-definitions summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.popover-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}

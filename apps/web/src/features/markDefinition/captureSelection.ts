@@ -5,6 +5,7 @@ import {
   mergeLineRects,
   type PointConverter,
 } from "../../pdf/coords";
+import { textNodeRects } from "../../pdf/rangeRects";
 
 export interface CapturedSelection {
   pageNumber: number;
@@ -50,23 +51,6 @@ export function captureSelection(
   const rects = mergeLineRects(cssRects).map((r) => cssRectToPdf(r, viewport));
   if (rects.length === 0) return { ok: false, reason: "empty" };
   return { ok: true, selection: { pageNumber, rects, text } };
-}
-
-/** Client rects of the parts of text nodes under `root` that `range` covers. */
-function textNodeRects(range: Range, root: Node): DOMRect[] {
-  const rects: DOMRect[] = [];
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const part = document.createRange();
-  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    if (!range.intersectsNode(node)) continue;
-    const text = node as Text;
-    part.selectNodeContents(text);
-    if (text === range.startContainer) part.setStart(text, range.startOffset);
-    if (text === range.endContainer) part.setEnd(text, range.endOffset);
-    if (part.collapsed) continue;
-    rects.push(...part.getClientRects());
-  }
-  return rects;
 }
 
 export const CAPTURE_MESSAGES: Record<Exclude<CaptureResult, { ok: true }>["reason"], string> = {

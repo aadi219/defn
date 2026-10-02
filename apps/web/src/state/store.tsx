@@ -7,8 +7,8 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import type { Definition, Term } from "@deflink/core";
-import { listDefinitionsForDoc, listTerms } from "../store/repo";
+import type { Definition, Suppression, Term } from "@deflink/core";
+import { listDefinitionsForDoc, listSuppressionsForDoc, listTerms } from "../store/repo";
 
 /** Mount with `key={docId}` so each document starts from a fresh state. */
 interface State {
@@ -16,14 +16,20 @@ interface State {
   terms: Term[];
   /** Definitions located in the current document. */
   definitions: Definition[];
+  /** "Don't link here" entries for the current document. */
+  suppressions: Suppression[];
 }
 
-type Action = { type: "loaded"; terms: Term[]; definitions: Definition[] };
+type Action = { type: "loaded" } & State;
 
 function reducer(_state: State, action: Action): State {
   switch (action.type) {
     case "loaded":
-      return { terms: action.terms, definitions: action.definitions };
+      return {
+        terms: action.terms,
+        definitions: action.definitions,
+        suppressions: action.suppressions,
+      };
   }
 }
 
@@ -37,14 +43,15 @@ const StoreContext = createContext<StoreValue | null>(null);
 
 export function StoreProvider(props: { docId: string | null; children: ReactNode }) {
   const { docId, children } = props;
-  const [state, dispatch] = useReducer(reducer, { terms: [], definitions: [] });
+  const [state, dispatch] = useReducer(reducer, { terms: [], definitions: [], suppressions: [] });
 
   const reload = useCallback(async () => {
-    const [terms, definitions] = await Promise.all([
+    const [terms, definitions, suppressions] = await Promise.all([
       listTerms(),
       docId ? listDefinitionsForDoc(docId) : Promise.resolve([]),
+      docId ? listSuppressionsForDoc(docId) : Promise.resolve([]),
     ]);
-    dispatch({ type: "loaded", terms, definitions });
+    dispatch({ type: "loaded", terms, definitions, suppressions });
   }, [docId]);
 
   useEffect(() => {

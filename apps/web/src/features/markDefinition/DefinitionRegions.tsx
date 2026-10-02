@@ -6,8 +6,10 @@ import { pdfRectToCss, type PointConverter } from "../../pdf/coords";
 export const DefinitionRegions = memo(function DefinitionRegions(props: {
   definitions: readonly Definition[];
   viewport: PointConverter;
+  /** Definition to highlight briefly (after "Go to source"). */
+  flashId?: string | null;
 }) {
-  const { definitions, viewport } = props;
+  const { definitions, viewport, flashId } = props;
   return (
     <>
       {definitions.flatMap((d) =>
@@ -16,7 +18,7 @@ export const DefinitionRegions = memo(function DefinitionRegions(props: {
           return (
             <div
               key={`${d.id}-${i}`}
-              className={`definition-region kind-${d.kind}`}
+              className={`definition-region kind-${d.kind}${d.id === flashId ? " flash" : ""}`}
               data-definition-id={d.id}
               style={{ left: r.left, top: r.top, width: r.width, height: r.height }}
             />

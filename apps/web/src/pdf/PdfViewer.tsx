@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import type { PageViewport, PDFDocumentProxy } from "pdfjs-dist";
+import type { PdfRect } from "@deflink/core";
+import { pdfRectToCss } from "./coords";
 import {
   anchorAt,
   clampScale,
@@ -28,6 +30,8 @@ const RENDER_MARGIN = 2;
 /** Pages further than this from the visible range are unmounted, releasing their canvas. */
 const KEEP_MARGIN = 5;
 const ZOOM_STEP = 1.2;
+/** Space left above a scrolled-to rect, CSS px. */
+const SCROLL_TO_RECT_MARGIN = 80;
 
 type Zoom = { mode: "fitWidth" } | { mode: "manual"; scale: number };
 
@@ -35,6 +39,8 @@ export interface PdfViewerHandle {
   scrollToPage(pageNumber: number): void;
   /** Viewport of a page at the current scale (page CSS px <-> PDF space). */
   getViewport(pageNumber: number): PageViewport | undefined;
+  /** Scrolls so that a PDF-space rect on a page is near the top of the view. */
+  scrollToPdfRect(pageNumber: number, rect: PdfRect): void;
 }
 
 interface Props {
@@ -131,8 +137,19 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
   );
   useImperativeHandle(
     ref,
-    () => ({ scrollToPage, getViewport: (pageNumber) => viewports[pageNumber - 1] }),
-    [scrollToPage, viewports],
+    () => ({
+      scrollToPage,
+      getViewport: (pageNumber) => viewports[pageNumber - 1],
+      scrollToPdfRect(pageNumber, rect) {
+        const el = scroller.current;
+        const viewport = viewports[pageNumber - 1];
+        const top = layout.tops[pageNumber - 1];
+        if (!el || !viewport || top === undefined) return;
+        const css = pdfRectToCss(rect, viewport);
+        el.scrollTop = Math.max(0, top + css.top - SCROLL_TO_RECT_MARGIN);
+      },
+    }),
+    [scrollToPage, viewports, layout],
   );
 
   const zoomBy = useCallback(

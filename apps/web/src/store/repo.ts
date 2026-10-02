@@ -3,6 +3,7 @@ import {
   type Crop,
   type Definition,
   type DocumentRecord,
+  type Suppression,
   type Term,
 } from "@deflink/core";
 import { db } from "./db";
@@ -36,6 +37,29 @@ export function listTerms(): Promise<Term[]> {
 
 export function listDefinitionsForDoc(docId: string): Promise<Definition[]> {
   return db.definitions.where("docId").equals(docId).toArray();
+}
+
+export function listDefinitionsForTerm(termId: string): Promise<Definition[]> {
+  return db.definitions.where("termId").equals(termId).toArray();
+}
+
+export async function getDocuments(ids: readonly string[]): Promise<Map<string, DocumentRecord>> {
+  const docs = await db.documents.bulkGet([...new Set(ids)]);
+  return new Map(docs.filter((d) => d !== undefined).map((d) => [d.id, d]));
+}
+
+export function listSuppressionsForDoc(docId: string): Promise<Suppression[]> {
+  return db.suppressions
+    .where("[docId+page]")
+    .between([docId, -Infinity], [docId, Infinity])
+    .toArray();
+}
+
+/** "Don't link here" for one occurrence (PLAN.md §4.1 Suppression). */
+export async function addSuppression(s: Omit<Suppression, "id">): Promise<Suppression> {
+  const suppression: Suppression = { id: crypto.randomUUID(), ...s };
+  await db.suppressions.add(suppression);
+  return suppression;
 }
 
 export function getCrop(id: string): Promise<Crop<Blob> | undefined> {

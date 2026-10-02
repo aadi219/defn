@@ -118,3 +118,27 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   disabled and replaced by "Add as another definition of X" / "Rename".
 - **Overlays:** `PdfPage` renders React overlay content (definition regions) in `.overlay-layer`;
   the dev segment outlines moved to a separate `.debug-host` that React never renders into.
+
+## M4
+
+- **Linking pipeline** (`features/linking`): `computeOccurrences` (match → `normRangeToRaw` →
+  `rawOffsetToDom` → text-node rects, merged per line) then `filterOccurrences` (own definition
+  region by rect intersection, suppressions by term + normalized start offset, optional "only after
+  first definition" for document-scoped terms). Filtering and hit testing are pure and tested.
+- **Occurrences are tagged with the scale** they were laid out at; underlines and hit testing only
+  use them when that equals the page's current scale, so nothing is misaligned between a zoom and
+  the text layer re-render (which triggers re-linking, §7.2).
+- **`useLinking` re-links all live pages in an effect** when terms, definitions or suppressions
+  change; the `set-state-in-effect` lint rule is disabled on that line because the source is DOM
+  layout, which React doesn't track.
+- **Underlines and regions are React overlay content**; definition regions flash after Go to source.
+- **Hover:** one rAF-throttled `pointermove` listener on the document view, skipped while a button
+  is held (drag-selecting). 300 ms open delay, 200 ms close delay, Esc closes, click (≤ 4 px travel,
+  no selection) opens immediately; clicking elsewhere closes.
+- **Popover** uses Floating UI with a virtual reference (page rect + occurrence rect, with the page
+  as `contextElement` so `autoUpdate` follows scrolling), `strategy: "fixed"`, flip/shift/size.
+  It loads all definitions of the term from IndexedDB on open; crops load per card as object URLs
+  revoked on unmount. "Go to source" is disabled for definitions in other documents (opening other
+  files needs the M8 recent-documents work).
+- **Deferred:** the popover's **Pin** button arrives with the stack in M5, and **Edit** with the
+  glossary editing flows in M7.
