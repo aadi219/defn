@@ -79,3 +79,15 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   other generated PDFs) for manually checking lazy rendering.
 - **Web unit tests:** `apps/web` now has Vitest for pure modules (`src/**/*.test.ts`). Config files
   are typechecked by a separate `tsconfig.node.json` with Node types.
+- **PageText separators come from text-item geometry**, not DOM bounding boxes: baseline `y`,
+  `x + width` and font height from each item's transform, plus `hasEOL` (which PDF.js also sets
+  on empty items, so the flag is carried over them). `TextLayer.textDivs[i]` renders the i-th
+  non-marker item, so segments map 1:1 to span text nodes without measuring the DOM. The pure
+  join (`joinItems`) and `rawOffsetToDom` are unit-tested.
+- **No-text-layer detection** runs once on load over the first three pages' `getTextContent()`
+  (same join + `raw.trim().length > 20` rule), independent of which pages are rendered, and is
+  stored in `DocumentRecord.hasTextLayer`.
+- **Dev aids:** a "Segments" toolbar toggle (dev builds only) outlines every segment in alternating
+  colours, and `__deflink.pageText(n)` in the console returns a rendered page's PageText.
+- **Known limitation:** "\n" normalizes to a space, so a match can still bridge two columns when a
+  PDF's content order interleaves them line by line. Revisit if it shows up in practice.

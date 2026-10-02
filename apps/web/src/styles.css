@@ -182,3 +182,14 @@ button[aria-pressed="true"] {
 .overlay-layer {
   pointer-events: none;
 }
+
+/* Dev-only segment outlines */
+.debug-segment {
+  position: absolute;
+  outline: 1px solid rgb(220 40 40 / 0.8);
+  background: rgb(220 40 40 / 0.08);
+}
+.debug-segment-1 {
+  outline-color: rgb(30 120 220 / 0.8);
+  background: rgb(30 120 220 / 0.08);
+}

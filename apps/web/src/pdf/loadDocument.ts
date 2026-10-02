@@ -1,5 +1,6 @@
 import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { itemGeometry, joinItems, pageHasText, textItems } from "./pageText";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -39,4 +40,17 @@ export async function loadPdf(file: File): Promise<LoadedPdf> {
   const info = meta?.info as { Title?: unknown } | undefined;
   const metaTitle = typeof info?.Title === "string" ? info.Title.trim() : "";
   return { docId, fileName: file.name, title: metaTitle || file.name, pdf };
+}
+
+/** Pages checked for text when deciding whether a document has a text layer (§5.1). */
+const TEXT_PROBE_PAGES = 3;
+
+/** False when none of the first three pages has meaningful text (probably a scanned PDF). */
+export async function detectTextLayer(pdf: PDFDocumentProxy): Promise<boolean> {
+  const count = Math.min(TEXT_PROBE_PAGES, pdf.numPages);
+  for (let n = 1; n <= count; n++) {
+    const content = await (await pdf.getPage(n)).getTextContent();
+    if (pageHasText(joinItems(textItems(content).map(itemGeometry)).raw)) return true;
+  }
+  return false;
 }
