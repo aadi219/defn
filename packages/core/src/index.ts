@@ -6,3 +6,5 @@ export * from "./termIndex";
 export * from "./collisions";
 export * from "./bestDefinition";
 export * from "./suggest";
+export * from "./merge";
+export * from "./exportFormat";

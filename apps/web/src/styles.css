@@ -621,3 +621,28 @@ button.danger {
   border-top: 1px solid var(--border);
   margin: 0.25rem 0;
 }
+
+/* Data menu */
+.data-menu {
+  position: relative;
+  display: inline-block;
+}
+.context-menu.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 10rem;
+}
+.start-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.import-result p {
+  margin: 0 0 0.4rem;
+}
+.import-result ul {
+  margin: 0 0 0.5rem;
+  max-height: 10rem;
+  overflow: auto;
+}

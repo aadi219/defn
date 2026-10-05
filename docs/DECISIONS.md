@@ -198,3 +198,22 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **Moving a term's only definition** to another term deletes the emptied term and its
   suppressions, since the user has just said it was the wrong term. Without that, the term would
   keep underlining text with no definition behind it.
+
+## M7
+
+- **Merge** (`core/merge.ts`, `mergeTermInto`): the target keeps its label, scope and case
+  sensitivity, and gains the source's label and aliases. Forms it already has (by normalized key)
+  are skipped; forms that would collide with a third term in the target's scope are dropped and
+  reported, so a merge never breaks the no-collision invariant (§4.3).
+- **Export validation** (`validateExportFile`) returns a cleaned copy (unknown fields stripped) or
+  the first problem with its path, e.g. `definitions[3].kind: expected one of …`. It also rejects
+  duplicate ids, dangling `termId`/`cropId` references and non-image crop data URLs.
+- **Import planning is pure** (`planImport`): records with an existing id are skipped unless
+  overwriting; an imported term that collides (decision 8) with a term in the same scope is merged
+  into it, including terms colliding within the file. Definitions and suppressions follow the merge,
+  and suppressions that become duplicates (same term, document, page and offset) are skipped. The
+  repo decodes crops before one write transaction applies the plan.
+- **Data menu** ("Data ▾": Export all… / Import…) sits next to "Open PDF…" in the document toolbar
+  and on the start screen. Import shows the file's contents, an "Overwrite" checkbox, then a summary
+  of what was added, replaced, skipped and merged. After an import, a `deflink:store-changed` window
+  event makes every mounted `StoreProvider` reload, so underlines update without reopening the PDF.

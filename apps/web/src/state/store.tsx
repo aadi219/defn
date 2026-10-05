@@ -41,6 +41,13 @@ interface StoreValue extends State {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+const STORE_CHANGED = "deflink:store-changed";
+
+/** Tells every mounted StoreProvider to reload, after a bulk change such as an import. */
+export function notifyStoreChanged() {
+  window.dispatchEvent(new Event(STORE_CHANGED));
+}
+
 export function StoreProvider(props: { docId: string | null; children: ReactNode }) {
   const { docId, children } = props;
   const [state, dispatch] = useReducer(reducer, { terms: [], definitions: [], suppressions: [] });
@@ -55,7 +62,12 @@ export function StoreProvider(props: { docId: string | null; children: ReactNode
   }, [docId]);
 
   useEffect(() => {
-    reload().catch((err: unknown) => console.error("Failed to load store", err));
+    const load = () => {
+      reload().catch((err: unknown) => console.error("Failed to load store", err));
+    };
+    load();
+    window.addEventListener(STORE_CHANGED, load);
+    return () => window.removeEventListener(STORE_CHANGED, load);
   }, [reload]);
 
   const value = useMemo(() => ({ ...state, docId, reload }), [state, docId, reload]);

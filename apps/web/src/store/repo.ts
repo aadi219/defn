@@ -1,6 +1,10 @@
 import {
   findCollision,
+  planImport,
   type Crop,
+  type ExportCrop,
+  type ExportFileV1,
+  type ImportPlan,
   type Definition,
   type DocumentRecord,
   type Suppression,
@@ -195,4 +199,86 @@ export async function deleteDefinition(
     await db.terms.delete(termId);
     return { termDeleted: true };
   });
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read crop"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  return (await fetch(dataUrl)).blob();
+}
+
+/** The whole store as an export file (PLAN.md §8), crops as data URLs. */
+export async function exportStore(): Promise<ExportFileV1> {
+  const tables = [db.documents, db.terms, db.definitions, db.crops, db.suppressions];
+  const [documents, terms, definitions, crops, suppressions] = await db.transaction(
+    "r",
+    tables,
+    () =>
+      Promise.all([
+        db.documents.toArray(),
+        db.terms.toArray(),
+        db.definitions.toArray(),
+        db.crops.toArray(),
+        db.suppressions.toArray(),
+      ]),
+  );
+  return {
+    format: "deflink",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    documents,
+    terms,
+    definitions,
+    crops: await Promise.all(
+      crops.map(async (c) => ({
+        id: c.id,
+        dataUrl: await blobToDataUrl(c.blob),
+        width: c.width,
+        height: c.height,
+      })),
+    ),
+    suppressions,
+  };
+}
+
+/**
+ * Imports a validated export file (PLAN.md §8): see `planImport` for the conflict policy. Crops are
+ * decoded before the write transaction, which then applies the whole plan at once.
+ */
+export async function importStore(
+  file: ExportFileV1,
+  options: { overwrite: boolean },
+): Promise<ImportPlan<ExportCrop>> {
+  const tables = [db.documents, db.terms, db.definitions, db.crops, db.suppressions];
+  const existing = await db.transaction("r", tables, async () => ({
+    terms: await db.terms.toArray(),
+    documentIds: new Set(await db.documents.toCollection().primaryKeys()),
+    definitionIds: new Set(await db.definitions.toCollection().primaryKeys()),
+    cropIds: new Set(await db.crops.toCollection().primaryKeys()),
+    suppressions: await db.suppressions.toArray(),
+  }));
+  const plan = planImport(existing, file, { overwrite: options.overwrite, now: Date.now() });
+  const crops: Crop<Blob>[] = await Promise.all(
+    plan.crops.map(async (c) => ({
+      id: c.id,
+      blob: await dataUrlToBlob(c.dataUrl),
+      width: c.width,
+      height: c.height,
+    })),
+  );
+  await db.transaction("rw", tables, async () => {
+    await db.documents.bulkPut(plan.documents);
+    await db.terms.bulkPut(plan.terms);
+    await db.crops.bulkPut(crops);
+    await db.definitions.bulkPut(plan.definitions);
+    await db.suppressions.bulkPut(plan.suppressions);
+  });
+  return plan;
 }

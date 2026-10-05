@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { DocumentView } from "./DocumentView";
+import { DataMenu } from "./features/data/DataMenu";
 import { ToastProvider } from "./features/toast/toast";
 import { detectTextLayer, isPdfFile, loadPdf, type LoadedPdf } from "./pdf/loadDocument";
 import { StoreProvider } from "./state/store";
@@ -116,6 +117,7 @@ function Shell() {
             toolbarStart={
               <>
                 {openButton}
+                <DataMenu />
                 <span className="doc-title" title={doc.fileName}>
                   {doc.title}
                 </span>
@@ -127,7 +129,10 @@ function Shell() {
         <main className="start">
           <h1>DefLink</h1>
           <p>Open a PDF to start marking definitions.</p>
-          {openButton}
+          <div className="start-actions">
+            {openButton}
+            <DataMenu />
+          </div>
           <p className="hint">…or drop a PDF anywhere on this window.</p>
         </main>
       )}
