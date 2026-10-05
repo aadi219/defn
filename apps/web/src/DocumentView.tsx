@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { PageViewport } from "pdfjs-dist";
-import type { Crop, Definition, Term } from "@deflink/core";
+import { bestDefinition, type Crop, type Definition, type Term } from "@deflink/core";
 import {
   CAPTURE_MESSAGES,
   captureSelection,
@@ -17,6 +17,9 @@ import {
 } from "./features/markDefinition/MarkDefinitionDialog";
 import { DefinitionPopover } from "./features/popover/DefinitionPopover";
 import { useHoverPopover } from "./features/popover/useHoverPopover";
+import { StackPanel } from "./features/stack/StackPanel";
+import { move, pin, unpin } from "./features/stack/stackState";
+import { usePanelPrefs, useStack } from "./features/stack/useStack";
 import { useToast } from "./features/toast/toast";
 import { unionPdfRects } from "./pdf/coords";
 import { renderCrop, type CropImage } from "./pdf/crop";
@@ -24,7 +27,12 @@ import type { LoadedPdf } from "./pdf/loadDocument";
 import { PdfViewer, type PdfViewerHandle } from "./pdf/PdfViewer";
 import { usePageTexts, type PageTextEntry } from "./pdf/usePageTexts";
 import { useStore } from "./state/store";
-import { addSuppression, saveNewDefinition, TermCollisionError } from "./store/repo";
+import {
+  addSuppression,
+  listDefinitionsForTerm,
+  saveNewDefinition,
+  TermCollisionError,
+} from "./store/repo";
 import { shouldIgnoreShortcut } from "./util/keys";
 
 interface Draft {
@@ -134,22 +142,58 @@ export function DocumentView({ doc, toolbarStart }: Props) {
     }
   }, [popover, closePopover, doc.docId, reload, toast]);
 
-  // G: go to the source of the open popover's term (first definition in this document).
+  const [stack, setStack] = useStack(doc.docId);
+  const [panel, setPanel] = usePanelPrefs();
+  const [stackFocus, setStackFocus] = useState<{ id: string; seq: number } | null>(null);
+
+  /** Pins a term's best definition (decision 6), below `after` if given, and shows it. */
+  const pinTerm = useCallback(
+    async (termId: string, after?: string) => {
+      const best = bestDefinition(await listDefinitionsForTerm(termId), doc.docId);
+      if (!best) {
+        toast("This term has no definitions.");
+        return;
+      }
+      setStack((s) => pin(s, best.id, after));
+      setPanel((p) => (p.open ? p : { ...p, open: true }));
+      setStackFocus((f) => ({ id: best.id, seq: (f?.seq ?? 0) + 1 }));
+    },
+    [doc.docId, setStack, setPanel, toast],
+  );
+
+  const pinPopoverTerm = useCallback(() => {
+    if (!popover) return;
+    closePopover();
+    pinTerm(popover.occurrence.termId).catch((err: unknown) => {
+      console.error(err);
+      toast(`Could not pin: ${String(err)}`);
+    });
+  }, [popover, closePopover, pinTerm, toast]);
+
+  // Popover shortcuts: G goes to the source in this document, P pins.
   useEffect(() => {
     if (!popover) return;
     const onKey = (e: KeyboardEvent) => {
-      if (shouldIgnoreShortcut(e) || (e.key !== "g" && e.key !== "G")) return;
-      const first = definitions
-        .filter((d) => d.termId === popover.occurrence.termId)
-        .sort((a, b) => a.page - b.page)[0];
-      if (first) {
+      if (shouldIgnoreShortcut(e)) return;
+      const key = e.key.toLowerCase();
+      if (key === "p") {
         e.preventDefault();
-        goToSource(first);
+        pinPopoverTerm();
+      } else if (key === "g") {
+        const termId = popover.occurrence.termId;
+        const first = bestDefinition(
+          definitions.filter((d) => d.termId === termId),
+          doc.docId,
+        );
+        if (first) {
+          e.preventDefault();
+          goToSource(first);
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [popover, definitions, goToSource]);
+  }, [popover, definitions, doc.docId, goToSource, pinPopoverTerm]);
 
   const capture = useCallback(() => captureSelection((n) => viewer.current?.getViewport(n)), []);
 
@@ -285,33 +329,61 @@ export function DocumentView({ doc, toolbarStart }: Props) {
 
   return (
     <div className="document-view" ref={root} onContextMenu={onContextMenu}>
-      <PdfViewer
-        ref={viewer}
-        pdf={doc.pdf}
-        onTextLayer={onTextLayer}
-        renderOverlay={renderOverlay}
-        toolbarStart={
-          <>
-            {toolbarStart}
-            {import.meta.env.DEV && (
-              <button
-                type="button"
-                aria-pressed={debugSegments}
-                onClick={() => setDebugSegments((on) => !on)}
-                title="Dev only: outline text-layer segments"
-              >
-                Segments
-              </button>
-            )}
-          </>
-        }
-      />
+      <div className="document-body">
+        <PdfViewer
+          ref={viewer}
+          pdf={doc.pdf}
+          onTextLayer={onTextLayer}
+          renderOverlay={renderOverlay}
+          toolbarStart={
+            <>
+              {toolbarStart}
+              {import.meta.env.DEV && (
+                <button
+                  type="button"
+                  aria-pressed={debugSegments}
+                  onClick={() => setDebugSegments((on) => !on)}
+                  title="Dev only: outline text-layer segments"
+                >
+                  Segments
+                </button>
+              )}
+            </>
+          }
+          toolbarEnd={
+            <button
+              type="button"
+              aria-pressed={panel.open}
+              onClick={() => setPanel((p) => ({ ...p, open: !p.open }))}
+            >
+              Pinned ({stack.ids.length})
+            </button>
+          }
+        />
+        {panel.open && (
+          <StackPanel
+            stack={stack}
+            docId={doc.docId}
+            termsById={termsById}
+            refreshKey={definitions}
+            width={panel.width}
+            focus={stackFocus}
+            onWidth={(width) => setPanel((p) => ({ ...p, width }))}
+            onClose={() => setPanel((p) => ({ ...p, open: false }))}
+            onUnpin={(id) => setStack((s) => unpin(s, id))}
+            onMove={(id, delta) => setStack((s) => move(s, id, delta))}
+            onMissing={(ids) => setStack((s) => ids.reduce(unpin, s))}
+            onGoToSource={goToSource}
+          />
+        )}
+      </div>
       {popover && popoverTerm && (
         <DefinitionPopover
           term={popoverTerm}
           docId={doc.docId}
           anchor={popover}
           onGoToSource={goToSource}
+          onPin={pinPopoverTerm}
           onSuppress={() => void suppressPopoverOccurrence()}
         />
       )}

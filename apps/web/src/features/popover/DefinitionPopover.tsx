@@ -8,7 +8,13 @@ import {
   useFloating,
   useMergeRefs,
 } from "@floating-ui/react";
-import type { Definition, DefinitionKind, DocumentRecord, Term } from "@deflink/core";
+import {
+  compareByPosition,
+  type Definition,
+  type DefinitionKind,
+  type DocumentRecord,
+  type Term,
+} from "@deflink/core";
 import type { PageCssRect } from "../../pdf/coords";
 import { getDocuments, listDefinitionsForTerm } from "../../store/repo";
 import { useCropUrl } from "./useCropUrl";
@@ -36,6 +42,8 @@ interface Props {
   docId: string;
   anchor: PopoverAnchor;
   onGoToSource(definition: Definition): void;
+  /** Pins the term's best definition (decision 6). */
+  onPin(): void;
   onSuppress(): void;
   onPointerEnter?(e: PointerEvent): void;
   onPointerLeave?(e: PointerEvent): void;
@@ -49,7 +57,7 @@ interface Loaded {
 
 /** Sorts a term's definitions: this document first (by page), then others (newest first). */
 export function splitDefinitions(definitions: readonly Definition[], docId: string) {
-  const current = definitions.filter((d) => d.docId === docId).sort((a, b) => a.page - b.page);
+  const current = definitions.filter((d) => d.docId === docId).sort(compareByPosition);
   const other = definitions
     .filter((d) => d.docId !== docId)
     .sort((a, b) => b.createdAt - a.createdAt);
@@ -58,7 +66,7 @@ export function splitDefinitions(definitions: readonly Definition[], docId: stri
 
 /** Hover / click popover for a linked occurrence (PLAN.md §7.3). */
 export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function DefinitionPopover(
-  { term, docId, anchor, onGoToSource, onSuppress, onPointerEnter, onPointerLeave },
+  { term, docId, anchor, onGoToSource, onPin, onSuppress, onPointerEnter, onPointerLeave },
   ref,
 ) {
   const [loaded, setLoaded] = useState<(Loaded & { termId: string }) | null>(null);
@@ -148,6 +156,9 @@ export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function Defi
       )}
 
       <div className="popover-actions">
+        <button type="button" onClick={onPin} disabled={!primary}>
+          Pin <kbd>P</kbd>
+        </button>
         <button
           type="button"
           onClick={() => data?.current[0] && onGoToSource(data.current[0])}

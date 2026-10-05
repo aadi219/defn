@@ -142,3 +142,19 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   files needs the M8 recent-documents work).
 - **Deferred:** the popover's **Pin** button arrives with the stack in M5, and **Edit** with the
   glossary editing flows in M7.
+
+## M5
+
+- **`bestDefinition` / `compareByPosition` live in core.** "Earliest" (decision 6) means by page,
+  then by the top of the region. The popover lists this document's definitions in the same order,
+  so its first card is the one Pin and `G` act on.
+- **Stack state** (`features/stack/stackState.ts`, pure and tested) is `{ ids, trail }`: card order
+  plus pin order for the breadcrumb. Both are persisted per document in localStorage
+  (`deflink:stack:<docId>`), a small extension of "just the list of definition IDs" since the
+  breadcrumb order can't be derived from card order. Malformed data falls back to an empty stack.
+  Pinning an already pinned definition doesn't duplicate it; the card scrolls into view and flashes.
+- **Pinned definitions can come from other documents** (global terms), so the panel loads them by
+  id from IndexedDB, and unpins ids whose definitions no longer exist.
+- **Panel:** closed by default and opened automatically on the first pin; a toolbar toggle shows
+  the pin count. Open state and width (260–720 px, drag or arrow keys on the left-edge handle) are
+  stored once for all documents in `deflink:stackPanel`.

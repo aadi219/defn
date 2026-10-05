@@ -43,6 +43,12 @@ export function listDefinitionsForTerm(termId: string): Promise<Definition[]> {
   return db.definitions.where("termId").equals(termId).toArray();
 }
 
+/** Definitions by id; ids that no longer exist are absent from the map. */
+export async function getDefinitions(ids: readonly string[]): Promise<Map<string, Definition>> {
+  const defs = await db.definitions.bulkGet([...ids]);
+  return new Map(defs.filter((d) => d !== undefined).map((d) => [d.id, d]));
+}
+
 export async function getDocuments(ids: readonly string[]): Promise<Map<string, DocumentRecord>> {
   const docs = await db.documents.bulkGet([...new Set(ids)]);
   return new Map(docs.filter((d) => d !== undefined).map((d) => [d.id, d]));

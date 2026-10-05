@@ -47,13 +47,15 @@ interface Props {
   pdf: PDFDocumentProxy;
   /** Extra toolbar content, shown at the start of the toolbar. */
   toolbarStart?: ReactNode;
+  /** Extra toolbar content, shown at the end of the toolbar. */
+  toolbarEnd?: ReactNode;
   onTextLayer?: (layer: RenderedTextLayer) => void;
   /** Content drawn in a page's non-interactive overlay layer. */
   renderOverlay?: (pageNumber: number, viewport: PageViewport) => ReactNode;
 }
 
 export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
-  { pdf, toolbarStart, onTextLayer, renderOverlay },
+  { pdf, toolbarStart, toolbarEnd, onTextLayer, renderOverlay },
   ref,
 ) {
   const scroller = useRef<HTMLDivElement>(null);
@@ -255,6 +257,7 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
             Fit width
           </button>
         </span>
+        {toolbarEnd}
       </div>
       <div className="scroller" ref={scroller} tabIndex={-1}>
         <div className="pages" style={{ height: layout.totalHeight, width: contentWidth }}>
