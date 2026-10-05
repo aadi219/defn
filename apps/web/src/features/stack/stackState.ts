@@ -35,7 +35,11 @@ export function move(state: StackState, id: string, delta: number): StackState {
   const from = state.ids.indexOf(id);
   const to = Math.max(0, Math.min(state.ids.length - 1, from + delta));
   if (from === -1 || from === to) return state;
-  const ids = insertAt(state.ids.filter((x) => x !== id), to, id);
+  const ids = insertAt(
+    state.ids.filter((x) => x !== id),
+    to,
+    id,
+  );
   return { ...state, ids };
 }
 

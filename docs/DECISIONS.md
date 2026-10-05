@@ -158,3 +158,8 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **Panel:** closed by default and opened automatically on the first pin; a toolbar toggle shows
   the pin count. Open state and width (260–720 px, drag or arrow keys on the left-edge handle) are
   stored once for all documents in `deflink:stackPanel`.
+- **Nested chips** use the document's linking matcher (`useLinking` returns it), so chips follow the
+  same scope and inflection rules as underlines. A chip pins the term's best definition directly
+  below its card; if that definition is already pinned, its card is highlighted instead.
+- **Breadcrumb** shows the pin order (`trail`) once two or more cards are pinned; clicking a crumb
+  scrolls to that card and highlights it.

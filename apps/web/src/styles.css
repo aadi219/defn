@@ -557,3 +557,36 @@ fieldset.field {
   border-color: transparent;
   background: transparent;
 }
+.stack-trail {
+  padding: 0.3rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.stack-trail ol {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stack-trail li + li::before {
+  content: "›";
+  margin: 0 0.35rem;
+  color: var(--muted);
+}
+.term-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.term-chip {
+  font-size: 0.8rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: #eef2fc;
+  border-color: #c9d5f5;
+}

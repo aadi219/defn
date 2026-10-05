@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import type { Definition, DocumentRecord, Term } from "@deflink/core";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import type { Definition, DocumentRecord, Term, TermMatcher } from "@deflink/core";
 import { getDefinitions, getDocuments } from "../../store/repo";
 import { KIND_LABELS } from "../popover/DefinitionPopover";
 import { useCropUrl } from "../popover/useCropUrl";
+import { nestedTermIds } from "./nestedTerms";
 import type { StackState } from "./stackState";
 import { clampPanelWidth } from "./useStack";
 
@@ -17,6 +18,8 @@ interface Props {
   stack: StackState;
   docId: string;
   termsById: ReadonlyMap<string, Term>;
+  /** The document's term matcher, for the nested term chips. */
+  matcher: TermMatcher;
   /** Changes whenever stored definitions may have changed, to reload the cards. */
   refreshKey: unknown;
   width: number;
@@ -29,12 +32,16 @@ interface Props {
   /** Called with pinned ids whose definitions no longer exist, so they can be unpinned. */
   onMissing(ids: string[]): void;
   onGoToSource(definition: Definition): void;
+  /** Pins a term's best definition directly below the card `after`. */
+  onPinTerm(termId: string, after: string): void;
+  /** Scrolls to and highlights a pinned card. */
+  onShow(id: string): void;
 }
 
 /** Right-hand panel of pinned definitions (PLAN.md §7.4). */
 export function StackPanel(props: Props) {
-  const { stack, docId, termsById, refreshKey, width, focus } = props;
-  const { onWidth, onClose, onUnpin, onMove, onMissing, onGoToSource } = props;
+  const { stack, docId, termsById, matcher, refreshKey, width, focus } = props;
+  const { onWidth, onClose, onUnpin, onMove, onMissing, onGoToSource, onPinTerm, onShow } = props;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const cardRefs = useRef(new Map<string, HTMLElement>());
   const onMissingRef = useRef(onMissing);
@@ -66,6 +73,14 @@ export function StackPanel(props: Props) {
     const d = loaded?.definitions.get(id);
     return d ? [d] : [];
   });
+  const labelOf = (id: string) => {
+    const d = loaded?.definitions.get(id);
+    return d ? (termsById.get(d.termId)?.label ?? null) : null;
+  };
+  const trail = stack.trail.flatMap((id) => {
+    const label = labelOf(id);
+    return label === null ? [] : [{ id, label }];
+  });
 
   return (
     <aside className="stack-panel" style={{ width }} aria-label="Pinned definitions">
@@ -84,6 +99,19 @@ export function StackPanel(props: Props) {
           ✕
         </button>
       </header>
+      {trail.length > 1 && (
+        <nav className="stack-trail" aria-label="Pin history">
+          <ol>
+            {trail.map(({ id, label }) => (
+              <li key={id}>
+                <button type="button" className="link-button" onClick={() => onShow(id)}>
+                  {label}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
       <div className="stack-cards">
         {stack.ids.length === 0 && (
           <p className="muted stack-empty">
@@ -99,6 +127,8 @@ export function StackPanel(props: Props) {
             }}
             definition={d}
             term={termsById.get(d.termId)}
+            termsById={termsById}
+            matcher={matcher}
             source={
               d.docId === docId
                 ? "this document"
@@ -111,6 +141,7 @@ export function StackPanel(props: Props) {
             onUnpin={() => onUnpin(d.id)}
             onMove={(delta) => onMove(d.id, delta)}
             onGoToSource={d.docId === docId ? () => onGoToSource(d) : undefined}
+            onPinTerm={(termId) => onPinTerm(termId, d.id)}
           />
         ))}
       </div>
@@ -122,6 +153,8 @@ function StackCard(props: {
   cardRef: (el: HTMLElement | null) => void;
   definition: Definition;
   term: Term | undefined;
+  termsById: ReadonlyMap<string, Term>;
+  matcher: TermMatcher;
   source: string;
   highlighted: boolean;
   highlightSeq: number;
@@ -130,11 +163,20 @@ function StackCard(props: {
   onUnpin(): void;
   onMove(delta: number): void;
   onGoToSource?: () => void;
+  onPinTerm(termId: string): void;
 }) {
   const { cardRef, definition: d, term, source, highlighted, highlightSeq } = props;
-  const { isFirst, isLast, onUnpin, onMove, onGoToSource } = props;
+  const { termsById, matcher, isFirst, isLast, onUnpin, onMove, onGoToSource, onPinTerm } = props;
   const crop = useCropUrl(d.cropId);
   const label = term?.label ?? "Unknown term";
+  const nested = useMemo(
+    () =>
+      nestedTermIds(matcher, d.text, d.termId).flatMap((id) => {
+        const t = termsById.get(id);
+        return t ? [t] : [];
+      }),
+    [matcher, d.text, d.termId, termsById],
+  );
   return (
     <section
       ref={cardRef}
@@ -189,6 +231,22 @@ function StackCard(props: {
           </span>
         )}
       </div>
+      {nested.length > 0 && (
+        <ul className="term-chips" aria-label={`Terms used in ${label}`}>
+          {nested.map((t) => (
+            <li key={t.id}>
+              <button
+                type="button"
+                className="term-chip"
+                onClick={() => onPinTerm(t.id)}
+                title={`Pin “${t.label}” below`}
+              >
+                {t.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

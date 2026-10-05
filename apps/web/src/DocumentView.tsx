@@ -61,10 +61,11 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   const linkPageRef = useRef<((entry: PageTextEntry) => void) | null>(null);
   const onPageText = useCallback((entry: PageTextEntry) => linkPageRef.current?.(entry), []);
   const { onTextLayer, liveEntries } = usePageTexts(debugSegments, onPageText);
-  const { byPage: occurrencesByPage, linkPage } = useLinking(
-    { docId: doc.docId, terms, definitions, suppressions },
-    liveEntries,
-  );
+  const {
+    byPage: occurrencesByPage,
+    linkPage,
+    matcher,
+  } = useLinking({ docId: doc.docId, terms, definitions, suppressions }, liveEntries);
   useEffect(() => {
     linkPageRef.current = linkPage;
   }, [linkPage]);
@@ -146,6 +147,12 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   const [panel, setPanel] = usePanelPrefs();
   const [stackFocus, setStackFocus] = useState<{ id: string; seq: number } | null>(null);
 
+  /** Scrolls to and highlights a pinned card. */
+  const showCard = useCallback(
+    (id: string) => setStackFocus((f) => ({ id, seq: (f?.seq ?? 0) + 1 })),
+    [],
+  );
+
   /** Pins a term's best definition (decision 6), below `after` if given, and shows it. */
   const pinTerm = useCallback(
     async (termId: string, after?: string) => {
@@ -156,19 +163,24 @@ export function DocumentView({ doc, toolbarStart }: Props) {
       }
       setStack((s) => pin(s, best.id, after));
       setPanel((p) => (p.open ? p : { ...p, open: true }));
-      setStackFocus((f) => ({ id: best.id, seq: (f?.seq ?? 0) + 1 }));
+      showCard(best.id);
     },
-    [doc.docId, setStack, setPanel, toast],
+    [doc.docId, setStack, setPanel, showCard, toast],
+  );
+
+  const reportPinError = useCallback(
+    (err: unknown) => {
+      console.error(err);
+      toast(`Could not pin: ${String(err)}`);
+    },
+    [toast],
   );
 
   const pinPopoverTerm = useCallback(() => {
     if (!popover) return;
     closePopover();
-    pinTerm(popover.occurrence.termId).catch((err: unknown) => {
-      console.error(err);
-      toast(`Could not pin: ${String(err)}`);
-    });
-  }, [popover, closePopover, pinTerm, toast]);
+    pinTerm(popover.occurrence.termId).catch(reportPinError);
+  }, [popover, closePopover, pinTerm, reportPinError]);
 
   // Popover shortcuts: G goes to the source in this document, P pins.
   useEffect(() => {
@@ -365,6 +377,7 @@ export function DocumentView({ doc, toolbarStart }: Props) {
             stack={stack}
             docId={doc.docId}
             termsById={termsById}
+            matcher={matcher}
             refreshKey={definitions}
             width={panel.width}
             focus={stackFocus}
@@ -374,6 +387,8 @@ export function DocumentView({ doc, toolbarStart }: Props) {
             onMove={(id, delta) => setStack((s) => move(s, id, delta))}
             onMissing={(ids) => setStack((s) => ids.reduce(unpin, s))}
             onGoToSource={goToSource}
+            onPinTerm={(termId, after) => void pinTerm(termId, after).catch(reportPinError)}
+            onShow={showCard}
           />
         )}
       </div>
