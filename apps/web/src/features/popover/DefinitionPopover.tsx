@@ -44,6 +44,8 @@ interface Props {
   onGoToSource(definition: Definition): void;
   /** Pins the term's best definition (decision 6). */
   onPin(): void;
+  onEdit(definition: Definition): void;
+  onDelete(definition: Definition): void;
   onSuppress(): void;
   onPointerEnter?(e: PointerEvent): void;
   onPointerLeave?(e: PointerEvent): void;
@@ -66,7 +68,18 @@ export function splitDefinitions(definitions: readonly Definition[], docId: stri
 
 /** Hover / click popover for a linked occurrence (PLAN.md §7.3). */
 export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function DefinitionPopover(
-  { term, docId, anchor, onGoToSource, onPin, onSuppress, onPointerEnter, onPointerLeave },
+  {
+    term,
+    docId,
+    anchor,
+    onGoToSource,
+    onPin,
+    onEdit,
+    onDelete,
+    onSuppress,
+    onPointerEnter,
+    onPointerLeave,
+  },
   ref,
 ) {
   const [loaded, setLoaded] = useState<(Loaded & { termId: string }) | null>(null);
@@ -145,6 +158,8 @@ export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function Defi
           source="this document"
           showHeader={i > 0}
           onGoToSource={() => onGoToSource(d)}
+          onEdit={() => onEdit(d)}
+          onDelete={() => onDelete(d)}
         />
       ))}
       {data && data.other.length > 0 && (
@@ -152,6 +167,8 @@ export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function Defi
           definitions={data.other}
           documents={data.documents}
           openByDefault={data.current.length === 0}
+          onEdit={onEdit}
+          onDelete={onDelete}
         />
       )}
 
@@ -179,8 +196,10 @@ function OtherDefinitions(props: {
   definitions: Definition[];
   documents: Map<string, DocumentRecord>;
   openByDefault: boolean;
+  onEdit(definition: Definition): void;
+  onDelete(definition: Definition): void;
 }) {
-  const { definitions, documents, openByDefault } = props;
+  const { definitions, documents, openByDefault, onEdit, onDelete } = props;
   return (
     <details className="other-definitions" open={openByDefault}>
       <summary>Other definitions ({definitions.length})</summary>
@@ -190,6 +209,8 @@ function OtherDefinitions(props: {
           definition={d}
           source={documents.get(d.docId)?.title ?? "another document"}
           showHeader
+          onEdit={() => onEdit(d)}
+          onDelete={() => onDelete(d)}
         />
       ))}
     </details>
@@ -202,8 +223,10 @@ function DefinitionCard(props: {
   /** Show kind/label (the popover header already shows them for the first definition). */
   showHeader: boolean;
   onGoToSource?: () => void;
+  onEdit(): void;
+  onDelete(): void;
 }) {
-  const { definition: d, source, showHeader, onGoToSource } = props;
+  const { definition: d, source, showHeader, onGoToSource, onEdit, onDelete } = props;
   const crop = useCropUrl(d.cropId);
   return (
     <section className="definition-card">
@@ -230,7 +253,22 @@ function DefinitionCard(props: {
             {source}, p. {d.page}
           </span>
         )}
+        <DefinitionActions onEdit={onEdit} onDelete={onDelete} />
       </div>
     </section>
+  );
+}
+
+/** Edit / Delete links shown on a definition's source line. */
+export function DefinitionActions(props: { onEdit(): void; onDelete(): void }) {
+  return (
+    <span className="definition-actions">
+      <button type="button" className="link-button" onClick={props.onEdit}>
+        Edit
+      </button>
+      <button type="button" className="link-button danger-link" onClick={props.onDelete}>
+        Delete
+      </button>
+    </span>
   );
 }

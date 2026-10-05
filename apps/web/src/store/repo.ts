@@ -109,3 +109,90 @@ export async function saveNewDefinition(input: NewDefinitionInput): Promise<Defi
     return definition;
   });
 }
+
+export interface DefinitionEdits {
+  kind: Definition["kind"];
+  /** Empty removes the label. */
+  label: string;
+}
+
+export interface UpdateDefinitionInput {
+  definitionId: string;
+  definition: DefinitionEdits;
+  /**
+   * Updated fields for the definition's own term (they apply to all its definitions), or the id of
+   * another term to move the definition to.
+   */
+  term:
+    { update: Pick<Term, "label" | "aliases" | "caseSensitive" | "scope"> } | { moveTo: string };
+}
+
+/**
+ * Edits a definition and its term in one transaction. Throws TermCollisionError if the updated term
+ * would collide with another term in its scope. Moving a term's only definition elsewhere deletes
+ * the emptied term and its suppressions; returns whether that happened.
+ */
+export async function updateDefinition(
+  input: UpdateDefinitionInput,
+): Promise<{ oldTermDeleted: boolean }> {
+  return db.transaction("rw", [db.terms, db.definitions, db.suppressions], async () => {
+    const definition = await db.definitions.get(input.definitionId);
+    if (!definition) throw new Error("This definition no longer exists");
+    const now = Date.now();
+    let termId = definition.termId;
+    let oldTermDeleted = false;
+    if ("update" in input.term) {
+      const term = await db.terms.get(termId);
+      if (!term) throw new Error("This definition's term no longer exists");
+      const updated: Term = { ...term, ...input.term.update, updatedAt: now };
+      const existing = findCollision(await db.terms.toArray(), updated, term.id);
+      if (existing) throw new TermCollisionError(existing);
+      await db.terms.put(updated);
+    } else {
+      termId = input.term.moveTo;
+      const moved = await db.terms.update(termId, { updatedAt: now });
+      if (!moved) throw new Error("The target term no longer exists");
+    }
+    const next: Definition = { ...definition, termId, kind: input.definition.kind };
+    if (input.definition.label) next.label = input.definition.label;
+    else delete next.label;
+    await db.definitions.put(next);
+    if (termId !== definition.termId) {
+      const old = definition.termId;
+      if ((await db.definitions.where("termId").equals(old).count()) === 0) {
+        await db.suppressions.where("termId").equals(old).delete();
+        await db.terms.delete(old);
+        oldTermDeleted = true;
+      } else {
+        await db.terms.update(old, { updatedAt: now });
+      }
+    }
+    return { oldTermDeleted };
+  });
+}
+
+/**
+ * Deletes a definition and its crop. With `deleteTermIfLast`, also deletes its term (and the term's
+ * suppressions) when no other definitions remain; otherwise the term is left orphaned (§4.3).
+ * Returns whether the term was deleted.
+ */
+export async function deleteDefinition(
+  id: string,
+  options: { deleteTermIfLast: boolean },
+): Promise<{ termDeleted: boolean }> {
+  return db.transaction("rw", [db.terms, db.definitions, db.crops, db.suppressions], async () => {
+    const definition = await db.definitions.get(id);
+    if (!definition) return { termDeleted: false };
+    await db.definitions.delete(id);
+    await db.crops.delete(definition.cropId);
+    const { termId } = definition;
+    const remaining = await db.definitions.where("termId").equals(termId).count();
+    if (!options.deleteTermIfLast || remaining > 0) {
+      await db.terms.update(termId, { updatedAt: Date.now() });
+      return { termDeleted: false };
+    }
+    await db.suppressions.where("termId").equals(termId).delete();
+    await db.terms.delete(termId);
+    return { termDeleted: true };
+  });
+}

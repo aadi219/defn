@@ -595,3 +595,29 @@ fieldset.field {
   margin: -0.4rem 0 0.75rem;
   font-size: 0.85rem;
 }
+.definition-actions {
+  display: inline-flex;
+  gap: 0.6rem;
+  margin-left: 0.75rem;
+}
+.definition-actions .link-button {
+  color: var(--muted);
+}
+.definition-actions .link-button:hover {
+  color: var(--accent);
+}
+.definition-actions .danger-link:hover {
+  color: #c62828;
+}
+button.danger {
+  background: #c62828;
+  border-color: #c62828;
+  color: #fff;
+}
+.confirm-dialog p {
+  margin: 0 0 0.75rem;
+}
+.context-menu .menu-separator {
+  border-top: 1px solid var(--border);
+  margin: 0.25rem 0;
+}

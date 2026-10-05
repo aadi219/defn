@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import type { Definition, DocumentRecord, Term, TermMatcher } from "@deflink/core";
 import { getDefinitions, getDocuments } from "../../store/repo";
-import { KIND_LABELS } from "../popover/DefinitionPopover";
+import { DefinitionActions, KIND_LABELS } from "../popover/DefinitionPopover";
 import { useCropUrl } from "../popover/useCropUrl";
 import { nestedTermIds } from "./nestedTerms";
 import type { StackState } from "./stackState";
@@ -32,6 +32,8 @@ interface Props {
   /** Called with pinned ids whose definitions no longer exist, so they can be unpinned. */
   onMissing(ids: string[]): void;
   onGoToSource(definition: Definition): void;
+  onEdit(definition: Definition): void;
+  onDelete(definition: Definition): void;
   /** Pins a term's best definition directly below the card `after`. */
   onPinTerm(termId: string, after: string): void;
   /** Scrolls to and highlights a pinned card. */
@@ -42,6 +44,7 @@ interface Props {
 export function StackPanel(props: Props) {
   const { stack, docId, termsById, matcher, refreshKey, width, focus } = props;
   const { onWidth, onClose, onUnpin, onMove, onMissing, onGoToSource, onPinTerm, onShow } = props;
+  const { onEdit, onDelete } = props;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const cardRefs = useRef(new Map<string, HTMLElement>());
   const onMissingRef = useRef(onMissing);
@@ -142,6 +145,8 @@ export function StackPanel(props: Props) {
             onMove={(delta) => onMove(d.id, delta)}
             onGoToSource={d.docId === docId ? () => onGoToSource(d) : undefined}
             onPinTerm={(termId) => onPinTerm(termId, d.id)}
+            onEdit={() => onEdit(d)}
+            onDelete={() => onDelete(d)}
           />
         ))}
       </div>
@@ -164,9 +169,12 @@ function StackCard(props: {
   onMove(delta: number): void;
   onGoToSource?: () => void;
   onPinTerm(termId: string): void;
+  onEdit(): void;
+  onDelete(): void;
 }) {
   const { cardRef, definition: d, term, source, highlighted, highlightSeq } = props;
   const { termsById, matcher, isFirst, isLast, onUnpin, onMove, onGoToSource, onPinTerm } = props;
+  const { onEdit, onDelete } = props;
   const crop = useCropUrl(d.cropId);
   const label = term?.label ?? "Unknown term";
   const nested = useMemo(
@@ -230,6 +238,7 @@ function StackCard(props: {
             {source}, p. {d.page}
           </span>
         )}
+        <DefinitionActions onEdit={onEdit} onDelete={onDelete} />
       </div>
       {nested.length > 0 && (
         <ul className="term-chips" aria-label={`Terms used in ${label}`}>

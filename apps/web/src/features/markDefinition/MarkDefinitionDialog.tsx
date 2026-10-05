@@ -4,6 +4,7 @@ import {
   findCollision,
   isValidTermLabel,
   parseAliases,
+  type Definition,
   type DefinitionKind,
   type Scope,
   type Term,
@@ -18,11 +19,25 @@ export interface MarkDefinitionValues {
   caseSensitive: boolean;
 }
 
-/** Create a new term, or add the definition to an existing (colliding) term. */
+/**
+ * Create a new term (in edit mode: update the definition's own term), or add the definition to an
+ * existing, colliding term (in edit mode: move it there).
+ */
 export type SaveTarget = { type: "new" } | { type: "existing"; term: Term };
 
+/** A saved definition being edited, with its term. */
+export interface EditingDefinition {
+  definition: Definition;
+  term: Term;
+  /** Number of the term's other definitions, which share the term fields. */
+  otherDefinitions: number;
+}
+
 interface Props {
+  /** Document that "This document" scope refers to. */
   docId: string;
+  /** Edit an existing definition instead of marking a new one. */
+  editing?: EditingDefinition;
   /** Selected text, shown for reference. */
   text: string;
   /** Object URL of the crop preview, once rendered. */
@@ -50,17 +65,18 @@ const KIND_LABELS: Record<DefinitionKind, string> = {
 
 /** Modal form for marking a selection as a definition (PLAN.md §1.1 step 2, §6.2). */
 export function MarkDefinitionDialog(props: Props) {
-  const { docId, text, cropUrl, terms, saving, error, onSave, onCancel } = props;
+  const { docId, editing, text, cropUrl, terms, saving, error, onSave, onCancel } = props;
+  const editTerm = editing?.term;
   const dialog = useRef<HTMLDialogElement>(null);
   const termInput = useRef<HTMLInputElement>(null);
   const id = useId();
 
-  const [term, setTerm] = useState(props.initialTerm ?? "");
-  const [aliases, setAliases] = useState("");
-  const [kind, setKind] = useState<DefinitionKind>("definition");
-  const [label, setLabel] = useState("");
-  const [scopeType, setScopeType] = useState<Scope["type"]>("document");
-  const [caseSensitive, setCaseSensitive] = useState(false);
+  const [term, setTerm] = useState(editTerm?.label ?? props.initialTerm ?? "");
+  const [aliases, setAliases] = useState(editTerm?.aliases.join(", ") ?? "");
+  const [kind, setKind] = useState<DefinitionKind>(editing?.definition.kind ?? "definition");
+  const [label, setLabel] = useState(editing?.definition.label ?? "");
+  const [scopeType, setScopeType] = useState<Scope["type"]>(editTerm?.scope.type ?? "document");
+  const [caseSensitive, setCaseSensitive] = useState(editTerm?.caseSensitive ?? false);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -83,12 +99,16 @@ export function MarkDefinitionDialog(props: Props) {
   );
   const valid = isValidTermLabel(values.term);
   const collision = valid
-    ? findCollision(terms, {
-        label: values.term,
-        aliases: values.aliases,
-        caseSensitive: values.caseSensitive,
-        scope: values.scope,
-      })
+    ? findCollision(
+        terms,
+        {
+          label: values.term,
+          aliases: values.aliases,
+          caseSensitive: values.caseSensitive,
+          scope: values.scope,
+        },
+        editTerm?.id,
+      )
     : undefined;
 
   const submit = (e: FormEvent) => {
@@ -109,7 +129,7 @@ export function MarkDefinitionDialog(props: Props) {
       }}
     >
       <form onSubmit={submit}>
-        <h2 id={`${id}-title`}>Mark as definition</h2>
+        <h2 id={`${id}-title`}>{editing ? "Edit definition" : "Mark as definition"}</h2>
 
         <div className="mark-preview">
           {cropUrl ? (
@@ -135,6 +155,12 @@ export function MarkDefinitionDialog(props: Props) {
             Guessed from the wording. Check it before saving.
           </p>
         )}
+        {editing && editing.otherDefinitions > 0 && (
+          <p className="field-hint">
+            Term, aliases, scope and case sensitivity are shared with {editing.otherDefinitions}{" "}
+            other definition{editing.otherDefinitions === 1 ? "" : "s"}.
+          </p>
+        )}
         {submitted && !valid && (
           <p id={`${id}-term-help`} className="field-error">
             Enter the term being defined.
@@ -152,7 +178,9 @@ export function MarkDefinitionDialog(props: Props) {
                 onClick={() => onSave(values, { type: "existing", term: collision })}
                 disabled={saving}
               >
-                Add as another definition of “{collision.label}”
+                {editing
+                  ? `Move this definition to “${collision.label}”`
+                  : `Add as another definition of “${collision.label}”`}
               </button>
               <button
                 type="button"

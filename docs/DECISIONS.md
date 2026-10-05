@@ -180,3 +180,21 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **Confidence:** styled runs and the explicit patterns are `high`; `a T is a …` and the broad
   we-say/we-call form are `low`, and the dialog shows "Guessed from the wording. Check it before
   saving." until the field is edited. Suggestions are always prefilled and selected.
+
+## Definition edit / delete (pulled forward from M7 at the user's request)
+
+- **Entry points:** Edit / Delete links on every definition in the popover (including "Other
+  definitions") and on stack cards, and a right-click menu on a saved definition region (hit-tested
+  against the page's definitions, since overlays take no pointer events). The right-click menu also
+  keeps "Mark as definition" when there is a selection.
+- **Edit** reuses the mark-definition dialog in edit mode (decision 7). Kind and label belong to the
+  definition; term, aliases, scope and case sensitivity belong to the term, so they change for all
+  its definitions (the dialog says how many share them). "This document" scope means the
+  definition's own document. A collision offers "Move this definition to X" instead of
+  "Add as another definition". The selected region and crop can't be edited: delete and re-mark.
+- **Delete** asks for confirmation. When it removes a term's last definition, a checkbox (on by
+  default) also deletes the term and its suppressions. This keeps §4.3's "no automatic deletion"
+  while orphaned terms can't be managed until the M7 glossary exists.
+- **Moving a term's only definition** to another term deletes the emptied term and its
+  suppressions, since the user has just said it was the wrong term. Without that, the term would
+  keep underlining text with no definition behind it.

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { PageViewport } from "pdfjs-dist";
 import {
   bestDefinition,
@@ -16,7 +16,9 @@ import {
 } from "./features/markDefinition/captureSelection";
 import { OccurrenceUnderlines } from "./features/linking/OccurrenceUnderlines";
 import { useLinking } from "./features/linking/useLinking";
+import { useDefinitionActions } from "./features/editDefinition/useDefinitionActions";
 import { DefinitionRegions } from "./features/markDefinition/DefinitionRegions";
+import { definitionsAt } from "./features/markDefinition/regionHit";
 import {
   MarkDefinitionDialog,
   type MarkDefinitionValues,
@@ -92,8 +94,17 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   const { target: popover, close: closePopover } = useHoverPopover(root, getOccurrences);
   const popoverTerm = popover ? termsById.get(popover.occurrence.termId) : undefined;
   const [draft, setDraft] = useState<Draft | null>(null);
-  /** Open context menu, with the selection captured when it opened. */
-  const [menu, setMenu] = useState<{ x: number; y: number; capture: CaptureResult } | null>(null);
+  const definitionActions = useDefinitionActions({ terms, reload, toast });
+  /**
+   * Open context menu, with the selection captured when it opened (null without a selection) and
+   * the saved definition regions under the pointer.
+   */
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    capture: CaptureResult | null;
+    regions: Definition[];
+  } | null>(null);
 
   const definitionsByPage = useMemo(() => {
     const byPage = new Map<number, Definition[]>();
@@ -326,13 +337,24 @@ export function DocumentView({ doc, toolbarStart }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [draft, startMark, capture]);
 
-  // Context menu: offer "Mark as definition" when right-clicking a text selection.
+  // Context menu: "Mark as definition" on a text selection, Edit / Delete on a saved region.
   const onContextMenu = (e: React.MouseEvent) => {
+    const target = e.target as Element;
     const sel = window.getSelection();
-    const inText = (e.target as Element).closest?.(".textLayer");
-    if (!inText || !sel || sel.isCollapsed) return;
+    const hasSelection = !!target.closest?.(".textLayer") && !!sel && !sel.isCollapsed;
+    const pageEl = target.closest?.<HTMLElement>(".page");
+    const pageNumber = Number(pageEl?.dataset.pageNumber);
+    const viewport = pageEl ? viewer.current?.getViewport(pageNumber) : undefined;
+    let regions: Definition[] = [];
+    if (pageEl && viewport) {
+      const box = pageEl.getBoundingClientRect();
+      const onPage = definitionsByPage.get(pageNumber) ?? [];
+      regions = definitionsAt(onPage, viewport, e.clientX - box.left, e.clientY - box.top);
+    }
+    if (!hasSelection && regions.length === 0) return;
     e.preventDefault();
-    setMenu({ x: e.clientX, y: e.clientY, capture: capture() });
+    closePopover();
+    setMenu({ x: e.clientX, y: e.clientY, capture: hasSelection ? capture() : null, regions });
   };
   useEffect(() => {
     if (!menu) return;
@@ -401,6 +423,8 @@ export function DocumentView({ doc, toolbarStart }: Props) {
             onGoToSource={goToSource}
             onPinTerm={(termId, after) => void pinTerm(termId, after).catch(reportPinError)}
             onShow={showCard}
+            onEdit={definitionActions.startEdit}
+            onDelete={definitionActions.startDelete}
           />
         )}
       </div>
@@ -411,18 +435,67 @@ export function DocumentView({ doc, toolbarStart }: Props) {
           anchor={popover}
           onGoToSource={goToSource}
           onPin={pinPopoverTerm}
+          onEdit={(d) => {
+            closePopover();
+            definitionActions.startEdit(d);
+          }}
+          onDelete={(d) => {
+            closePopover();
+            definitionActions.startDelete(d);
+          }}
           onSuppress={() => void suppressPopoverOccurrence()}
         />
       )}
       {menu && (
         <ul className="context-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
-          <li role="none">
-            <button type="button" role="menuitem" autoFocus onClick={() => startMark(menu.capture)}>
-              Mark as definition <kbd>D</kbd>
-            </button>
-          </li>
+          {menu.capture && (
+            <li role="none">
+              <button
+                type="button"
+                role="menuitem"
+                autoFocus
+                onClick={() => menu.capture && startMark(menu.capture)}
+              >
+                Mark as definition <kbd>D</kbd>
+              </button>
+            </li>
+          )}
+          {menu.regions.map((d, i) => {
+            const label = termsById.get(d.termId)?.label ?? "definition";
+            return (
+              <Fragment key={d.id}>
+                {(i > 0 || menu.capture) && <li role="separator" className="menu-separator" />}
+                <li role="none">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    autoFocus={!menu.capture && i === 0}
+                    onClick={() => {
+                      setMenu(null);
+                      definitionActions.startEdit(d);
+                    }}
+                  >
+                    Edit definition of “{label}”
+                  </button>
+                </li>
+                <li role="none">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenu(null);
+                      definitionActions.startDelete(d);
+                    }}
+                  >
+                    Delete definition of “{label}”
+                  </button>
+                </li>
+              </Fragment>
+            );
+          })}
         </ul>
       )}
+      {definitionActions.dialogs}
       {draft && (
         <MarkDefinitionDialog
           docId={doc.docId}
