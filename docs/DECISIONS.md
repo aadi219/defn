@@ -163,3 +163,20 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   below its card; if that definition is already pinned, its card is highlighted instead.
 - **Breadcrumb** shows the pin order (`trail`) once two or more cards are pinned; clicking a crumb
   scrolls to that card and highlights it.
+
+## M6
+
+- **Font style** comes from each text item's `fontName`, stored on its `Segment`; at capture time
+  `page.commonObjs` resolves it to the font, and a font is italic/bold if its name says so (the §6.4
+  list plus LaTeX's `CMTI`/`CMSL`/`CMBX`, but not math italic `CMMI`) or PDF.js's `italic`/`bold`
+  flags are set. If any selected segment's font can't be resolved, no runs are passed (§6.4).
+- **Runs are merged by style**, with separators attached to the preceding run. Heuristic 1 skips
+  styled runs that are headings ("**Definition 1.1.**") or a single letter (italic variables).
+- **Patterns, in order:** `Definition n (T)` (parentheses required, otherwise it would swallow the
+  following sentence), `we say … is T if`, `we call … a T if`, `is called T`, `a T is a …`, then
+  the plan's broad `we (say|call) … T (is|if)`. Deviations from §6.4: `is called` takes the term
+  *after* the phrase ("such a space is called compact"), and the two narrower we-say/we-call
+  patterns run first because the plan's form returns the subject ("space") rather than the term.
+- **Confidence:** styled runs and the explicit patterns are `high`; `a T is a …` and the broad
+  we-say/we-call form are `low`, and the dialog shows "Guessed from the wording. Check it before
+  saving." until the field is edited. Suggestions are always prefilled and selected.

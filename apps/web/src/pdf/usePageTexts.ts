@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { PageViewport } from "pdfjs-dist";
+import type { PageViewport, PDFPageProxy } from "pdfjs-dist";
 import { clearSegmentOutlines, drawSegmentOutlines } from "../features/debug/segmentOutlines";
 import { buildPageText, textItems, type PageText } from "./pageText";
 import type { RenderedTextLayer } from "./PdfPage";
@@ -8,6 +8,7 @@ import type { RenderedTextLayer } from "./PdfPage";
 export interface PageTextEntry {
   pageText: PageText;
   pageEl: HTMLElement;
+  page: PDFPageProxy;
   /** Scale the text layer was rendered at, and the matching viewport. */
   scale: number;
   viewport: PageViewport;
@@ -36,6 +37,7 @@ export function usePageTexts(debugSegments: boolean, onPageText?: (entry: PageTe
     const entry: PageTextEntry = {
       pageText,
       pageEl,
+      page: layer.page,
       scale: layer.scale,
       viewport: layer.page.getViewport({ scale: layer.scale }),
     };
@@ -54,11 +56,15 @@ export function usePageTexts(debugSegments: boolean, onPageText?: (entry: PageTe
     return live;
   }, []);
 
-  /** PageText of a page whose text layer is currently in the DOM. */
-  const getPageText = useCallback(
-    (page: number): PageText | undefined =>
-      liveEntries().find((e) => e.pageText.page === page)?.pageText,
+  /** Entry of a page whose text layer is currently in the DOM. */
+  const getEntry = useCallback(
+    (page: number): PageTextEntry | undefined =>
+      liveEntries().find((e) => e.pageText.page === page),
     [liveEntries],
+  );
+  const getPageText = useCallback(
+    (page: number): PageText | undefined => getEntry(page)?.pageText,
+    [getEntry],
   );
 
   useEffect(() => {
@@ -79,5 +85,5 @@ export function usePageTexts(debugSegments: boolean, onPageText?: (entry: PageTe
     };
   }, [getPageText]);
 
-  return { onTextLayer, getPageText, liveEntries };
+  return { onTextLayer, getEntry, liveEntries };
 }

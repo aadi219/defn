@@ -27,7 +27,10 @@ interface Props {
   text: string;
   /** Object URL of the crop preview, once rendered. */
   cropUrl: string | null;
+  /** Suggested term (PLAN.md §6.4), prefilled and selected. */
   initialTerm?: string;
+  /** Confidence of `initialTerm`; a low-confidence guess is flagged for checking. */
+  suggestionConfidence?: "high" | "low";
   terms: readonly Term[];
   saving: boolean;
   error: string | null;
@@ -123,10 +126,15 @@ export function MarkDefinitionDialog(props: Props) {
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             aria-invalid={submitted && !valid}
-            aria-describedby={`${id}-term-help`}
+            aria-describedby={`${id}-term-help ${id}-term-hint`}
             placeholder="e.g. compact space"
           />
         </label>
+        {props.suggestionConfidence === "low" && term === props.initialTerm && (
+          <p id={`${id}-term-hint`} className="field-hint">
+            Guessed from the wording. Check it before saving.
+          </p>
+        )}
         {submitted && !valid && (
           <p id={`${id}-term-help`} className="field-error">
             Enter the term being defined.

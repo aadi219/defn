@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { PageViewport } from "pdfjs-dist";
-import { bestDefinition, type Crop, type Definition, type Term } from "@deflink/core";
+import {
+  bestDefinition,
+  suggestTerm,
+  type Crop,
+  type Definition,
+  type Term,
+  type TermSuggestion,
+} from "@deflink/core";
 import {
   CAPTURE_MESSAGES,
   captureSelection,
@@ -37,6 +44,7 @@ import { shouldIgnoreShortcut } from "./util/keys";
 
 interface Draft {
   selection: CapturedSelection;
+  suggestion: TermSuggestion;
   crop: Promise<CropImage>;
   cropUrl: string | null;
   saving: boolean;
@@ -60,7 +68,7 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   // Page text feeds linking; the ref breaks the cycle between the two hooks.
   const linkPageRef = useRef<((entry: PageTextEntry) => void) | null>(null);
   const onPageText = useCallback((entry: PageTextEntry) => linkPageRef.current?.(entry), []);
-  const { onTextLayer, liveEntries } = usePageTexts(debugSegments, onPageText);
+  const { onTextLayer, liveEntries, getEntry } = usePageTexts(debugSegments, onPageText);
   const {
     byPage: occurrencesByPage,
     linkPage,
@@ -207,7 +215,10 @@ export function DocumentView({ doc, toolbarStart }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [popover, definitions, doc.docId, goToSource, pinPopoverTerm]);
 
-  const capture = useCallback(() => captureSelection((n) => viewer.current?.getViewport(n)), []);
+  const capture = useCallback(
+    () => captureSelection((n) => viewer.current?.getViewport(n), getEntry),
+    [getEntry],
+  );
 
   const startMark = useCallback(
     (result: CaptureResult) => {
@@ -220,7 +231,8 @@ export function DocumentView({ doc, toolbarStart }: Props) {
       const crop = doc.pdf
         .getPage(selection.pageNumber)
         .then((p) => renderCrop(p, selection.rects));
-      setDraft({ selection, crop, cropUrl: null, saving: false, error: null });
+      const suggestion = suggestTerm(selection.text, selection.runs);
+      setDraft({ selection, suggestion, crop, cropUrl: null, saving: false, error: null });
       crop.then(
         (image) => {
           const url = URL.createObjectURL(image.blob);
@@ -415,6 +427,8 @@ export function DocumentView({ doc, toolbarStart }: Props) {
         <MarkDefinitionDialog
           docId={doc.docId}
           text={draft.selection.text}
+          initialTerm={draft.suggestion.term}
+          suggestionConfidence={draft.suggestion.term ? draft.suggestion.confidence : undefined}
           cropUrl={draft.cropUrl}
           terms={terms}
           saving={draft.saving}

@@ -1,17 +1,29 @@
-import type { PdfRect } from "@deflink/core";
+import type { PdfRect, StyledRun } from "@deflink/core";
+import type { PDFPageProxy } from "pdfjs-dist";
 import {
   clientRectToPage,
   cssRectToPdf,
   mergeLineRects,
   type PointConverter,
 } from "../../pdf/coords";
+import { resolveFontStyle } from "../../pdf/fontStyle";
+import type { PageText } from "../../pdf/pageText";
 import { textNodeRects } from "../../pdf/rangeRects";
+import { selectedRawRange, styledRuns } from "./selectionRuns";
 
 export interface CapturedSelection {
   pageNumber: number;
   rects: PdfRect[];
   /** Selected text with whitespace collapsed. */
   text: string;
+  /** The selection split by font style, when every font's style is known (PLAN.md §6.4). */
+  runs?: StyledRun[];
+}
+
+/** What capture needs from a rendered page to read font styles. */
+export interface PageFonts {
+  pageText: PageText;
+  page: PDFPageProxy;
 }
 
 export type CaptureResult =
@@ -30,6 +42,7 @@ function pageOf(node: Node): HTMLElement | null {
  */
 export function captureSelection(
   getViewport: (pageNumber: number) => PointConverter | undefined,
+  getPageFonts: (pageNumber: number) => PageFonts | undefined,
 ): CaptureResult {
   const sel = window.getSelection();
   if (!sel || sel.isCollapsed || sel.rangeCount === 0) return { ok: false, reason: "empty" };
@@ -50,7 +63,17 @@ export function captureSelection(
   const cssRects = textNodeRects(range, textLayer).map((r) => clientRectToPage(r, pageEl));
   const rects = mergeLineRects(cssRects).map((r) => cssRectToPdf(r, viewport));
   if (rects.length === 0) return { ok: false, reason: "empty" };
-  return { ok: true, selection: { pageNumber, rects, text } };
+  const runs = selectionRuns(range, getPageFonts(pageNumber));
+  return { ok: true, selection: { pageNumber, rects, text, ...(runs ? { runs } : {}) } };
+}
+
+function selectionRuns(range: Range, fonts: PageFonts | undefined): StyledRun[] | undefined {
+  if (!fonts) return undefined;
+  const raw = selectedRawRange(range, fonts.pageText);
+  if (!raw) return undefined;
+  return styledRuns(fonts.pageText, raw.start, raw.end, (name) =>
+    resolveFontStyle(fonts.page, name),
+  );
 }
 
 export const CAPTURE_MESSAGES: Record<Exclude<CaptureResult, { ok: true }>["reason"], string> = {

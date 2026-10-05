@@ -590,3 +590,8 @@ fieldset.field {
   background: #eef2fc;
   border-color: #c9d5f5;
 }
+.field-hint {
+  color: var(--muted);
+  margin: -0.4rem 0 0.75rem;
+  font-size: 0.85rem;
+}

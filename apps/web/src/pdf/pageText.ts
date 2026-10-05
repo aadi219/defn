@@ -5,6 +5,8 @@ export interface Segment {
   node: Text;
   start: number;
   end: number;
+  /** PDF.js font id (`TextItem.fontName`), for looking up the font's style. */
+  fontName?: string;
 }
 
 export interface PageText {
@@ -96,7 +98,9 @@ export function buildPageText(
   const segments: Segment[] = [];
   ranges.forEach((range, i) => {
     const node = textDivs[i]?.firstChild;
-    if (range.end > range.start && node instanceof Text) segments.push({ node, ...range });
+    if (range.end > range.start && node instanceof Text) {
+      segments.push({ node, ...range, fontName: items[i]!.fontName });
+    }
   });
   return { page, raw, segments };
 }
