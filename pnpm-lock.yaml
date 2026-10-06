@@ -249,6 +249,25 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(@types/node@26.6.3)(@vitest/coverage-v8@5.0.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15))
 
+  apps/zotero:
+    dependencies:
+      '@deflink/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@deflink/viewer':
+        specifier: workspace:*
+        version: link:../../packages/viewer
+    devDependencies:
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/node@26.6.3)(@vitest/coverage-v8@5.0.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15))
+
   packages/core:
     devDependencies:
       vitest:

@@ -23,7 +23,13 @@ export default tseslint.config(
     rules: reactHooks.configs.recommended.rules,
   },
   {
-    files: ["scripts/**/*.ts", "**/*.config.{js,ts}", "packages/**/test/**/*.ts"],
+    files: [
+      "scripts/**/*.ts",
+      "apps/*/scripts/**/*.ts",
+      "**/*.config.{js,ts}",
+      "packages/**/test/**/*.ts",
+      "apps/zotero/test/**/*.ts",
+    ],
     languageOptions: { globals: globals.node },
   },
   {
@@ -31,6 +37,15 @@ export default tseslint.config(
     rules: {
       "no-restricted-globals": ["error", "window", "document", "navigator", "localStorage"],
     },
+  },
+  {
+    // Zotero bootstrap script: a classic script whose top-level functions Zotero calls.
+    files: ["apps/zotero/addon/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: { Zotero: "readonly", Services: "readonly" },
+    },
+    rules: { "no-unused-vars": "off", "@typescript-eslint/no-unused-vars": "off" },
   },
   prettier,
 );

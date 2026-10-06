@@ -291,3 +291,29 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **`buildPageTextFromDom`** builds PageText from the text layer's spans and their client rects
   (§5.1's original approach). Zotero bundles its own PDF.js, whose `TextLayer` and its `textDivs`
   are private, so the web app's item-index alignment isn't available there.
+- **Plugin layout** (`apps/zotero`): `addon/manifest.json` + `addon/bootstrap.js` (loads the bundle
+  with `Services.scriptloader.loadSubScript` after `Zotero.initializationPromise`), `src/` bundled
+  by esbuild into `content/deflink.js` as an IIFE assigned to `DefLink`, and `pnpm --filter
+  @deflink/zotero build` → `dist/deflink-<version>.xpi`. The `.xpi` is written by a small tested
+  stored-ZIP writer (`scripts/zip.ts`) rather than a new dependency. `update_url` is a placeholder
+  (the plugin isn't published).
+- **Sandbox globals:** the bootstrap scope has no window, so timers are installed from
+  `resource://gre/modules/Timer.sys.mjs`, ids come from `Services.uuid`, cloning uses JSON, and
+  page work uses the reader document's own window (`atob`, `MutationObserver`).
+- **Storage** (`src/store.ts`): everything in memory, saved to `<data dir>/deflink/store.json`
+  (debounced 500 ms, atomic via `tmpPath`, flushed on shutdown), crops as `crops/<id>.png`. An
+  unreadable store file is never overwritten until something changes. File I/O is injected, so the
+  store is unit-tested in Node. The mapping from definition to mirrored annotation key lives here
+  (`annotationKeys`), since `core`'s model stays unchanged.
+- **Marking:** a "Mark as definition" button in the text selection popup. The text and PDF rects
+  come from the reader's own `params.annotation` (Zotero does its own text selection). The dialog
+  is a native modal `<dialog>` in the reader document, with term suggestion from wording patterns
+  only (no font runs are available) and the same collision handling as the web app.
+- **Crops are copied from the page canvas the reader has already rendered**, at the current zoom,
+  instead of re-rendering with Zotero's PDF.js. That would mean calling content-side functions with
+  privileged objects. If the page canvas is missing, the definition is saved without an image, and
+  the popover will fall back to its text.
+- **Highlight mirroring:** after saving, `Zotero.Annotations.saveFromJSON(attachment, …)` creates a
+  highlight with the reader's own position, page label and sort index, comment `term: <label>`,
+  tag `deflink:<kind>`, and a colour by kind from Zotero's palette. Failures are logged and don't
+  undo the definition.
