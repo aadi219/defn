@@ -11,6 +11,7 @@ import {
   type Suppression,
   type Term,
 } from "@deflink/core";
+import type { PdfFileHandle } from "../pdf/fileAccess";
 import { db } from "./db";
 
 /**
@@ -354,4 +355,58 @@ export async function deleteTerms(ids: readonly string[]): Promise<void> {
       .delete();
     await db.terms.bulkDelete([...ids]);
   });
+}
+
+export interface RecentDocument {
+  document: DocumentRecord;
+  definitionCount: number;
+  handle?: PdfFileHandle;
+}
+
+/** Most recently opened documents, with their definition counts and stored file handles. */
+export async function listRecentDocuments(limit: number): Promise<RecentDocument[]> {
+  return db.transaction("r", [db.documents, db.definitions, db.fileHandles], async () => {
+    const documents = await db.documents
+      .orderBy("lastOpenedAt")
+      .reverse()
+      .filter((d) => d.lastOpenedAt > 0)
+      .limit(limit)
+      .toArray();
+    return Promise.all(
+      documents.map(async (document) => {
+        const [definitionCount, stored] = await Promise.all([
+          db.definitions.where("docId").equals(document.id).count(),
+          db.fileHandles.get(document.id),
+        ]);
+        return { document, definitionCount, ...(stored ? { handle: stored.handle } : {}) };
+      }),
+    );
+  });
+}
+
+export async function saveFileHandle(docId: string, handle: PdfFileHandle): Promise<void> {
+  await db.fileHandles.put({ docId, handle });
+}
+
+/**
+ * Removes a document from the recent list: forgets its file handle and, if it has no definitions
+ * or suppressions, deletes its record. Records that definitions refer to are kept, so their
+ * source titles still show; they just drop out of the list by being marked as never opened.
+ */
+export async function forgetRecentDocument(docId: string): Promise<void> {
+  await db.transaction(
+    "rw",
+    [db.documents, db.definitions, db.suppressions, db.fileHandles],
+    async () => {
+      await db.fileHandles.delete(docId);
+      const used =
+        (await db.definitions.where("docId").equals(docId).count()) > 0 ||
+        (await db.suppressions
+          .where("[docId+page]")
+          .between([docId, -Infinity], [docId, Infinity])
+          .count()) > 0;
+      if (used) await db.documents.update(docId, { lastOpenedAt: 0 });
+      else await db.documents.delete(docId);
+    },
+  );
 }

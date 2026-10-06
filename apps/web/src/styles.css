@@ -836,3 +836,46 @@ button.danger {
 .shortcut-list dd {
   margin: 0;
 }
+
+/* Recent documents */
+.recent {
+  margin: 2rem auto 0;
+  width: min(560px, 100%);
+  text-align: left;
+}
+.recent h2 {
+  font-size: 1rem;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+.recent ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.recent li {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+.recent-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+}
+.recent-title {
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}

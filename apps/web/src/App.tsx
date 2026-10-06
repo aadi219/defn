@@ -4,11 +4,19 @@ import { DataMenu } from "./features/data/DataMenu";
 import { GlossaryDialog } from "./features/glossary/GlossaryDialog";
 import { SettingsDialog } from "./features/settings/SettingsDialog";
 import { ShortcutsDialog } from "./features/settings/ShortcutsDialog";
-import { ToastProvider } from "./features/toast/toast";
+import { RecentDocuments } from "./features/recent/RecentDocuments";
+import { ToastProvider, useToast } from "./features/toast/toast";
+import {
+  canUseFileHandles,
+  fileFromHandle,
+  handleFromDrop,
+  pickPdfWithHandle,
+  type PdfFileHandle,
+} from "./pdf/fileAccess";
 import { detectTextLayer, isPdfFile, loadPdf, type LoadedPdf } from "./pdf/loadDocument";
 import { SettingsProvider, useSettings } from "./state/settings";
 import { StoreProvider } from "./state/store";
-import { upsertDocument } from "./store/repo";
+import { saveFileHandle, upsertDocument, type RecentDocument } from "./store/repo";
 import { shouldIgnoreShortcut } from "./util/keys";
 
 type LoadState =
@@ -33,6 +41,10 @@ function Shell() {
   const [noTextLayer, setNoTextLayer] = useState(false);
   const [dialog, setDialog] = useState<"glossary" | "settings" | "shortcuts" | null>(null);
   const { settings, update } = useSettings();
+  const toast = useToast();
+  const handlesSupported = canUseFileHandles();
+  /** Recent document the next file-input pick is meant to reopen, to warn on a mismatch. */
+  const expectedDoc = useRef<RecentDocument["document"] | null>(null);
 
   // App-wide shortcuts: ? shows the shortcut list, U toggles underlines.
   useEffect(() => {
@@ -51,30 +63,83 @@ function Shell() {
   }, [settings.showUnderlines, update]);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const openFile = useCallback(async (file: File) => {
-    if (!isPdfFile(file)) {
-      setLoad({ status: "error", message: `"${file.name}" is not a PDF.` });
-      return;
-    }
-    setLoad({ status: "loading", fileName: file.name });
-    try {
-      const loaded = await loadPdf(file);
-      const hasTextLayer = await detectTextLayer(loaded.pdf);
-      await upsertDocument({
-        id: loaded.docId,
-        title: loaded.title,
-        fileName: loaded.fileName,
-        pageCount: loaded.pdf.numPages,
-        hasTextLayer,
+  const openFile = useCallback(
+    async (
+      file: File,
+      options: { handle?: PdfFileHandle | null; expected?: RecentDocument["document"] | null } = {},
+    ) => {
+      if (!isPdfFile(file)) {
+        setLoad({ status: "error", message: `"${file.name}" is not a PDF.` });
+        return;
+      }
+      setLoad({ status: "loading", fileName: file.name });
+      try {
+        const loaded = await loadPdf(file);
+        const hasTextLayer = await detectTextLayer(loaded.pdf);
+        await upsertDocument({
+          id: loaded.docId,
+          title: loaded.title,
+          fileName: loaded.fileName,
+          pageCount: loaded.pdf.numPages,
+          hasTextLayer,
+        });
+        if (options.handle) {
+          await saveFileHandle(loaded.docId, options.handle).catch((err: unknown) =>
+            console.warn("Could not remember the file for the recent list", err),
+          );
+        }
+        setDoc(loaded);
+        setNoTextLayer(!hasTextLayer);
+        setLoad({ status: "idle" });
+        const { expected } = options;
+        if (expected && expected.id !== loaded.docId) {
+          toast(
+            `This file's contents differ from “${expected.title}”, so it opened as a separate document.`,
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        setLoad({ status: "error", message: `Could not open "${file.name}": ${String(err)}` });
+      }
+    },
+    [toast],
+  );
+
+  /** Opens a PDF chosen with the native picker (keeping its handle) or the file input. */
+  const chooseFile = useCallback(
+    (expected: RecentDocument["document"] | null = null) => {
+      expectedDoc.current = expected;
+      if (!handlesSupported) {
+        fileInput.current?.click();
+        return;
+      }
+      pickPdfWithHandle()
+        .then((picked) => {
+          if (picked) return openFile(picked.file, { handle: picked.handle, expected });
+        })
+        .catch((err: unknown) => {
+          console.error(err);
+          setLoad({ status: "error", message: `Could not open the file: ${String(err)}` });
+        });
+    },
+    [handlesSupported, openFile],
+  );
+
+  const openRecent = useCallback(
+    (recent: RecentDocument) => {
+      const { document: expected, handle } = recent;
+      if (!handlesSupported || !handle) {
+        chooseFile(expected);
+        return;
+      }
+      void fileFromHandle(handle).then((file) => {
+        if (file) return openFile(file, { handle, expected });
+        // A picker opened here could be blocked: the click's user activation may be used up.
+        toast(`“${expected.fileName}” could not be reopened. Use Open PDF… to choose it again.`);
       });
-      setDoc(loaded);
-      setNoTextLayer(!hasTextLayer);
-      setLoad({ status: "idle" });
-    } catch (err) {
-      console.error(err);
-      setLoad({ status: "error", message: `Could not open "${file.name}": ${String(err)}` });
-    }
-  }, []);
+    },
+    [handlesSupported, chooseFile, openFile, toast],
+  );
 
   // Release the previous document's worker resources when it is replaced.
   useEffect(() => () => void doc?.pdf.loadingTask.destroy(), [doc]);
@@ -86,12 +151,18 @@ function Shell() {
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const file = Array.from(e.dataTransfer.files).find(isPdfFile) ?? e.dataTransfer.files[0];
-    if (file) void openFile(file);
+    const files = Array.from(e.dataTransfer.files);
+    const index = Math.max(0, files.findIndex(isPdfFile));
+    const file = files[index];
+    if (!file) return;
+    // The handle must be requested during the drop event, before any await.
+    const fileItems = Array.from(e.dataTransfer.items).filter((i) => i.kind === "file");
+    const handle = handleFromDrop(fileItems[index]);
+    void handle.then((h) => openFile(file, { handle: h }));
   };
 
   const openButton = (
-    <button type="button" onClick={() => fileInput.current?.click()}>
+    <button type="button" onClick={() => chooseFile()}>
       Open PDF…
     </button>
   );
@@ -142,7 +213,9 @@ function Shell() {
         onChange={(e) => {
           const file = e.target.files?.[0];
           e.target.value = "";
-          if (file) void openFile(file);
+          const expected = expectedDoc.current;
+          expectedDoc.current = null;
+          if (file) void openFile(file, { expected });
         }}
       />
       {load.status === "error" && (
@@ -185,6 +258,7 @@ function Shell() {
             {appButtons}
           </div>
           <p className="hint">…or drop a PDF anywhere on this window.</p>
+          <RecentDocuments handlesSupported={handlesSupported} onOpen={openRecent} />
         </main>
       )}
       {load.status === "loading" && (

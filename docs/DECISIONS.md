@@ -246,3 +246,15 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **`?`** opens a keyboard shortcut list. Settings (⚙) and shortcuts (?) also have toolbar buttons,
   next to Glossary and Data, both in a document and on the start screen. A shared `Modal`
   component (native `<dialog>`) now backs the glossary sub-dialogs and these two.
+- **Recent documents** on the start screen: the 10 most recently opened, with file name, time and
+  definition count. Where the File System Access API exists (Chromium), "Open PDF…" uses
+  `showOpenFilePicker` and drops use `getAsFileSystemHandle`, and the handle is stored per document
+  in a new Dexie table (`fileHandles`, schema version 2). Clicking a recent item asks for read
+  permission and reopens the file directly. Elsewhere, or with no stored handle, it opens the file
+  picker; if the chosen file hashes to a different document, a toast says it opened separately.
+  If a stored handle fails, the user is told to use Open PDF…, since a picker opened after the
+  permission request may be blocked.
+- **Removing a recent item** forgets its handle. Its document record is deleted only if nothing
+  refers to it; otherwise `lastOpenedAt` is set to 0, which hides it from the list but keeps source
+  titles for its definitions. File handles are not exported.
+- **Dark mode is deferred** at the user's request (not needed for now).
