@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Definition, PdfRect } from "@deflink/core";
-import type { PointConverter } from "@deflink/viewer";
+import type { Definition, PdfRect } from "@defn/core";
+import type { PointConverter } from "@defn/viewer";
 import { definitionsAt } from "../regionHit";
 
 // Page 1000 units tall at scale 2: CSS y = (1000 - pdf y) * 2.

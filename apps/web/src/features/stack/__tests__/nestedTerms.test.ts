@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMatcherForDocument, type Term } from "@deflink/core";
+import { buildMatcherForDocument, type Term } from "@defn/core";
 import { nestedTermIds } from "../nestedTerms";
 
 function term(id: string, label: string, aliases: string[] = []): Term {

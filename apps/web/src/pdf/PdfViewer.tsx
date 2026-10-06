@@ -10,8 +10,8 @@ import {
   type ReactNode,
 } from "react";
 import type { PageViewport, PDFDocumentProxy } from "pdfjs-dist";
-import type { PdfRect } from "@deflink/core";
-import { pdfRectToCss } from "@deflink/viewer";
+import type { PdfRect } from "@defn/core";
+import { pdfRectToCss } from "@defn/viewer";
 import {
   anchorAt,
   clampScale,

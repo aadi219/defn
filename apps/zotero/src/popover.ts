@@ -1,24 +1,24 @@
-import { compareByPosition, type Definition, type Term } from "@deflink/core";
+import { compareByPosition, type Definition, type Term } from "@defn/core";
 import { ensureStyle, h } from "./dom";
 import { KIND_LABELS } from "./markDialog";
 import { placePopover, type Box } from "./placement";
-import type { DefLinkStore } from "./store";
+import type { DefnStore } from "./store";
 
 const CSS = `
-.deflink-popover { position: fixed; z-index: 10000; max-width: 520px; min-width: 240px;
+.defn-popover { position: fixed; z-index: 10000; max-width: 520px; min-width: 240px;
   max-height: 70vh; overflow: auto; background: #fff; color: #222; border: 1px solid #ccc;
   border-radius: 8px; box-shadow: 0 8px 28px rgb(0 0 0 / 0.2); padding: 0.5rem 0.65rem;
   font: 13px system-ui, sans-serif; }
-.deflink-popover header { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem; }
-.deflink-popover .badge { font-size: 11px; text-transform: uppercase; padding: 0 0.35rem;
+.defn-popover header { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.35rem; }
+.defn-popover .badge { font-size: 11px; text-transform: uppercase; padding: 0 0.35rem;
   border-radius: 4px; background: #fff1c2; color: #6b4e00; }
-.deflink-popover .def + .def { border-top: 1px solid #ddd; margin-top: 0.4rem; padding-top: 0.4rem; }
-.deflink-popover img { display: block; max-width: 100%; background: #fff; }
-.deflink-popover .text { margin: 0; color: #444; }
-.deflink-popover .source { color: #666; font-size: 12px; margin-top: 0.2rem; }
-.deflink-popover .actions { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
-.deflink-popover button { font: inherit; }
-.deflink-popover :focus-visible { outline: 2px solid #2f5bd3; outline-offset: 1px; }
+.defn-popover .def + .def { border-top: 1px solid #ddd; margin-top: 0.4rem; padding-top: 0.4rem; }
+.defn-popover img { display: block; max-width: 100%; background: #fff; }
+.defn-popover .text { margin: 0; color: #444; }
+.defn-popover .source { color: #666; font-size: 12px; margin-top: 0.2rem; }
+.defn-popover .actions { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+.defn-popover button { font: inherit; }
+.defn-popover :focus-visible { outline: 2px solid #2f5bd3; outline-offset: 1px; }
 `;
 
 export interface PopoverActions {
@@ -36,13 +36,13 @@ export class DefinitionPopover {
 
   constructor(
     private readonly doc: Document,
-    private readonly store: DefLinkStore,
+    private readonly store: DefnStore,
     term: Term,
     docId: string,
     anchor: Box,
     actions: PopoverActions,
   ) {
-    ensureStyle(doc, "deflink-popover-style", CSS);
+    ensureStyle(doc, "defn-popover-style", CSS);
     const all = store.definitionsForTerm(term.id);
     const current = all.filter((d) => d.docId === docId).sort(compareByPosition);
     const other = all.filter((d) => d.docId !== docId).sort((a, b) => b.createdAt - a.createdAt);
@@ -51,7 +51,7 @@ export class DefinitionPopover {
     this.el = h(
       doc,
       "div",
-      { className: "deflink-popover", role: "dialog", "aria-label": `Definition of ${term.label}` },
+      { className: "defn-popover", role: "dialog", "aria-label": `Definition of ${term.label}` },
       h(
         doc,
         "header",

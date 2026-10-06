@@ -1,17 +1,17 @@
 {
-  "name": "deflink",
+  "name": "defn",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.8.1",
   "scripts": {
-    "dev": "pnpm --filter @deflink/web dev",
+    "dev": "pnpm --filter @defn/web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck && tsc --noEmit -p scripts",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "pnpm -r test",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
-    "e2e": "pnpm --filter @deflink/web e2e",
+    "e2e": "pnpm --filter @defn/web e2e",
     "fixtures": "tsx scripts/make-fixtures.ts"
   },
   "devDependencies": {

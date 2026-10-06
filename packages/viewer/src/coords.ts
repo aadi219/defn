@@ -1,4 +1,4 @@
-import type { PdfRect } from "@deflink/core";
+import type { PdfRect } from "@defn/core";
 
 /** A rectangle in CSS px relative to a page element's top-left corner. */
 export interface PageCssRect {

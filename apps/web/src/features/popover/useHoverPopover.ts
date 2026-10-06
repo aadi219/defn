@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import type { PageCssRect } from "@deflink/viewer";
-import { hitTest, type Occurrence } from "@deflink/viewer";
+import type { PageCssRect } from "@defn/viewer";
+import { hitTest, type Occurrence } from "@defn/viewer";
 
 const OPEN_DELAY_MS = 300;
 const CLOSE_DELAY_MS = 200;

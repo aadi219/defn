@@ -1,5 +1,5 @@
-import { clientRectToPage } from "@deflink/viewer";
-import type { PageText } from "@deflink/viewer";
+import { clientRectToPage } from "@defn/viewer";
+import type { PageText } from "@defn/viewer";
 
 const LAYER_CLASS = "debug-host";
 

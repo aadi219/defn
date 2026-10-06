@@ -10,7 +10,7 @@ import {
   type DocumentRecord,
   type Suppression,
   type Term,
-} from "@deflink/core";
+} from "@defn/core";
 import type { PdfFileHandle } from "../pdf/fileAccess";
 import { db } from "./db";
 
@@ -232,7 +232,7 @@ export async function exportStore(): Promise<ExportFileV1> {
       ]),
   );
   return {
-    format: "deflink",
+    format: "defn",
     version: 1,
     exportedAt: new Date().toISOString(),
     documents,

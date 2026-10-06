@@ -16,7 +16,7 @@ import {
   type Definition,
   type Term,
   type TermSuggestion,
-} from "@deflink/core";
+} from "@defn/core";
 import {
   CAPTURE_MESSAGES,
   captureSelection,
@@ -25,7 +25,7 @@ import {
 } from "./features/markDefinition/captureSelection";
 import { OccurrenceUnderlines } from "./features/linking/OccurrenceUnderlines";
 import { orderOccurrences, stepOccurrence } from "./features/linking/occurrenceNav";
-import type { Occurrence } from "@deflink/viewer";
+import type { Occurrence } from "@defn/viewer";
 import { useLinking } from "./features/linking/useLinking";
 import { useDefinitionActions } from "./features/editDefinition/useDefinitionActions";
 import { DefinitionRegions } from "./features/markDefinition/DefinitionRegions";
@@ -41,7 +41,7 @@ import { StackPanel } from "./features/stack/StackPanel";
 import { move, pin, unpin } from "./features/stack/stackState";
 import { usePanelPrefs, useStack } from "./features/stack/useStack";
 import { useToast } from "./features/toast/toast";
-import { cssRectToPdf, unionPdfRects } from "@deflink/viewer";
+import { cssRectToPdf, unionPdfRects } from "@defn/viewer";
 import { renderCrop, type CropImage } from "./pdf/crop";
 import type { LoadedPdf } from "./pdf/loadDocument";
 import { PdfViewer, type PdfViewerHandle } from "./pdf/PdfViewer";

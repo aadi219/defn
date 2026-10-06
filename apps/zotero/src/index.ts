@@ -1,14 +1,14 @@
-import type { Definition, Term } from "@deflink/core";
+import type { Definition, Term } from "@defn/core";
 import { highlightJSON } from "./annotations";
 import { cropFromCanvas } from "./crop";
 import { h } from "./dom";
 import { ReaderLinker } from "./linker";
 import { openMarkDialog, type MarkTarget, type MarkValues } from "./markDialog";
 import { connect, toPdfRect } from "./readerBridge";
-import { DefLinkStore, TermCollisionError, type StoreIO } from "./store";
+import { DefnStore, TermCollisionError, type StoreIO } from "./store";
 
 /**
- * DefLink for Zotero (PLAN.md §M9). Bundled by scripts/build.ts as an IIFE assigned to `DefLink`
+ * Defn for Zotero (PLAN.md §M9). Bundled by scripts/build.ts as an IIFE assigned to `Defn`
  * and loaded into the bootstrap scope by addon/bootstrap.js.
  */
 
@@ -35,14 +35,14 @@ const geckoIO: StoreIO = {
   join: (...parts) => PathUtils.join(...parts),
 };
 
-let store: DefLinkStore | null = null;
+let store: DefnStore | null = null;
 /** One linker per open PDF reader; `null` while connecting or when linking is unavailable. */
 const linkers = new Map<ZoteroReaderInstance, ReaderLinker | null>();
 
 const uuid = () => Services.uuid.generateUUID().toString().slice(1, -1);
 
 function log(message: string, err?: unknown) {
-  Zotero.debug(`DefLink: ${message}`);
+  Zotero.debug(`Defn: ${message}`);
   if (err) Zotero.logError(err);
 }
 
@@ -187,7 +187,7 @@ function onTextSelectionPopup(event: ZoteroReaderEvent) {
     "button",
     {
       type: "button",
-      className: "toolbar-button wide-button deflink-mark",
+      className: "toolbar-button wide-button defn-mark",
       title: "Mark the selection as the definition of a term",
       onClick: () => {
         markDefinition(reader, doc, annotation).catch((err: unknown) => log("marking failed", err));
@@ -199,7 +199,7 @@ function onTextSelectionPopup(event: ZoteroReaderEvent) {
 }
 
 export async function startup({ id }: { id: string; version: string; rootURI: string }) {
-  store = new DefLinkStore(geckoIO, PathUtils.join(Zotero.DataDirectory.dir, "deflink"));
+  store = new DefnStore(geckoIO, PathUtils.join(Zotero.DataDirectory.dir, "defn"));
   await store.load();
   Zotero.Reader.registerEventListener("renderTextSelectionPopup", onTextSelectionPopup, id);
   // Fires as each reader renders its toolbar, i.e. for every newly opened reader.

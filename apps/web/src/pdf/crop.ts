@@ -1,6 +1,6 @@
-import type { PdfRect } from "@deflink/core";
+import type { PdfRect } from "@defn/core";
 import type { PDFPageProxy } from "pdfjs-dist";
-import { padAndClamp, pdfRectToCss, unionPdfRects } from "@deflink/viewer";
+import { padAndClamp, pdfRectToCss, unionPdfRects } from "@defn/viewer";
 
 const PADDING = 6; // PDF units
 const MAX_BYTES = 300 * 1024;

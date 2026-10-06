@@ -1,6 +1,6 @@
-import type { StyledRun } from "@deflink/core";
+import type { StyledRun } from "@defn/core";
 import type { FontStyle } from "../../pdf/fontStyle";
-import type { PageText } from "@deflink/viewer";
+import type { PageText } from "@defn/viewer";
 
 /** The selection as a range of offsets in the page's raw text, or null if it covers no segment. */
 export function selectedRawRange(

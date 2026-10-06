@@ -1,4 +1,4 @@
-# DefLink — Implementation Plan
+# Defn — Implementation Plan
 
 > A PDF reader that lets the user mark a highlighted passage as the **definition** (or theorem, lemma, notation…) of a **term**, then makes every other occurrence of that term hoverable to show the definition in a popover or pin it to a side stack.
 
@@ -65,7 +65,7 @@ This document is the source of truth for implementation. Work through the milest
 ## 3. Repository layout
 
 ```
-deflink/
+defn/
 ├── package.json                 # workspace root; scripts: dev, build, check, test, e2e, fixtures
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
@@ -424,7 +424,7 @@ The popover stays open while the pointer is over the popover itself, and closes 
 
 ```ts
 interface ExportFileV1 {
-  format: "deflink";
+  format: "defn";
   version: 1;
   exportedAt: string;           // ISO
   documents: DocumentRecord[];
@@ -435,7 +435,7 @@ interface ExportFileV1 {
 }
 ```
 
-- **Export** downloads `deflink-YYYY-MM-DD.json`.
+- **Export** downloads `defn-YYYY-MM-DD.json`.
 - **Import** validates the schema with a hand-written type guard (no extra dependencies). Conflict policy: records with the same `id` are skipped, unless "overwrite" is chosen. Terms that collide on surface form within the same scope are merged into the existing term.
 - Unit-test the validation and the merge logic in core, with crop blobs abstracted out.
 
@@ -526,7 +526,7 @@ Each milestone ends with `pnpm check` green, and `pnpm e2e` green from M3 onward
 - Use `Zotero.Reader.registerEventListener("renderTextSelectionPopup", …)` to add a "Mark as definition" button to the selection popup.
 - Access the reader iframe's text layer to build `PageText` and inject the overlay layer and popover. Isolate all access to reader internals in one module (`readerBridge.ts`) so breakage is contained.
 - Document ID = the Zotero attachment item key, not a file hash.
-- Storage: a JSON file in the Zotero data directory (`deflink/store.json`), written with debounce, with crops as PNG files in `deflink/crops/`. Optionally, mirror each definition as a Zotero highlight annotation with tag `deflink:<kind>` and comment `term: <label>`.
+- Storage: a JSON file in the Zotero data directory (`defn/store.json`), written with debounce, with crops as PNG files in `defn/crops/`. Optionally, mirror each definition as a Zotero highlight annotation with tag `defn:<kind>` and comment `term: <label>`.
 - **Accept:** in Zotero, a user can mark a definition, see underlines, and hover for a popover on a real paper.
 
 ---

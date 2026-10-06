@@ -51,7 +51,7 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   both ways + tokenize + match), and `createMatcherCache` (single-entry memo keyed on the terms
   array identity, docId and inflection option).
 - **Performance tests** live in `*.perf.test.ts`, run in `pnpm check`, and are excluded from
-  `pnpm --filter @deflink/core coverage` because instrumentation skews timings. They take the best
+  `pnpm --filter @defn/core coverage` because instrumentation skews timings. They take the best
   of 5 runs after a warm-up to avoid flakiness. Measured: match ~1 ms (budget 50), rebuild ~10 ms
   (budget 20), after adding an ASCII fast path to `normalize` and lazy trie child maps.
 
@@ -88,7 +88,7 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   (same join + `raw.trim().length > 20` rule), independent of which pages are rendered, and is
   stored in `DocumentRecord.hasTextLayer`.
 - **Dev aids:** a "Segments" toolbar toggle (dev builds only) outlines every segment in alternating
-  colours, and `__deflink.pageText(n)` in the console returns a rendered page's PageText.
+  colours, and `__defn.pageText(n)` in the console returns a rendered page's PageText.
 - **Known limitation:** "\n" normalizes to a space, so a match can still bridge two columns when a
   PDF's content order interleaves them line by line. Revisit if it shows up in practice.
 
@@ -150,14 +150,14 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   so its first card is the one Pin and `G` act on.
 - **Stack state** (`features/stack/stackState.ts`, pure and tested) is `{ ids, trail }`: card order
   plus pin order for the breadcrumb. Both are persisted per document in localStorage
-  (`deflink:stack:<docId>`), a small extension of "just the list of definition IDs" since the
+  (`defn:stack:<docId>`), a small extension of "just the list of definition IDs" since the
   breadcrumb order can't be derived from card order. Malformed data falls back to an empty stack.
   Pinning an already pinned definition doesn't duplicate it; the card scrolls into view and flashes.
 - **Pinned definitions can come from other documents** (global terms), so the panel loads them by
   id from IndexedDB, and unpins ids whose definitions no longer exist.
 - **Panel:** closed by default and opened automatically on the first pin; a toolbar toggle shows
   the pin count. Open state and width (260–720 px, drag or arrow keys on the left-edge handle) are
-  stored once for all documents in `deflink:stackPanel`.
+  stored once for all documents in `defn:stackPanel`.
 - **Nested chips** use the document's linking matcher (`useLinking` returns it), so chips follow the
   same scope and inflection rules as underlines. A chip pins the term's best definition directly
   below its card; if that definition is already pinned, its card is highlighted instead.
@@ -215,7 +215,7 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   repo decodes crops before one write transaction applies the plan.
 - **Data menu** ("Data ▾": Export all… / Import…) sits next to "Open PDF…" in the document toolbar
   and on the start screen. Import shows the file's contents, an "Overwrite" checkbox, then a summary
-  of what was added, replaced, skipped and merged. After an import, a `deflink:store-changed` window
+  of what was added, replaced, skipped and merged. After an import, a `defn:store-changed` window
   event makes every mounted `StoreProvider` reload, so underlines update without reopening the PDF.
 - **Glossary** is a large modal `<dialog>` opened from a "Glossary" button next to "Open PDF…" (in
   the document toolbar and on the start screen), so it works without an open document. It lists
@@ -231,12 +231,12 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **Delete** (per row, or bulk from checkboxes) confirms with the number of definitions that go with
   the terms, and removes their crops and suppressions in one transaction (§4.3).
 - **Messages show inside the glossary**, not as toasts: toasts render beneath modal dialogs, which
-  sit in the browser's top layer. Every change fires `deflink:store-changed`, so underlines and
+  sit in the browser's top layer. Every change fires `defn:store-changed`, so underlines and
   pinned cards behind the glossary update at once.
 
 ## M8
 
-- **Settings** (`state/settings.tsx`) are app-wide, in localStorage (`deflink:settings`), validated
+- **Settings** (`state/settings.tsx`) are app-wide, in localStorage (`defn:settings`), validated
   on read: inflection, "only link after first definition", show underlines, underline colour (hex
   only, since it goes into a CSS variable). The provider sits above every document.
 - **`U` hides underlines but keeps hover/click popovers working**, so you can read without visual
@@ -283,7 +283,7 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   `ReaderInstance.navigate(location)`, `_waitForReader()`, `_item`, `type`;
   `_internalReader._primaryView._iframeWindow.PDFViewerApplication` (`pdfViewer.getPageView(i)` →
   `div`, `pdfPage`; `eventBus` `textlayerrendered`); `Zotero.Annotations.saveFromJSON`.
-- **New package `@deflink/viewer`** (not in §3): the PDF.js-version-independent helpers both apps
+- **New package `@defn/viewer`** (not in §3): the PDF.js-version-independent helpers both apps
   need (coordinates, range rects, `joinItems` / `rawOffsetToDom`, occurrence computing, filtering and
   hit testing), moved out of `apps/web` with their tests. It needs the DOM, so it can't live in
   `core`, which stays unchanged. These helpers now take the document from the nodes they are given
@@ -293,14 +293,14 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   are private, so the web app's item-index alignment isn't available there.
 - **Plugin layout** (`apps/zotero`): `addon/manifest.json` + `addon/bootstrap.js` (loads the bundle
   with `Services.scriptloader.loadSubScript` after `Zotero.initializationPromise`), `src/` bundled
-  by esbuild into `content/deflink.js` as an IIFE assigned to `DefLink`, and `pnpm --filter
-  @deflink/zotero build` → `dist/deflink-<version>.xpi`. The `.xpi` is written by a small tested
+  by esbuild into `content/defn.js` as an IIFE assigned to `Defn`, and `pnpm --filter
+  @defn/zotero build` → `dist/defn-<version>.xpi`. The `.xpi` is written by a small tested
   stored-ZIP writer (`scripts/zip.ts`) rather than a new dependency. `update_url` is a placeholder
   (the plugin isn't published).
 - **Sandbox globals:** the bootstrap scope has no window, so timers are installed from
   `resource://gre/modules/Timer.sys.mjs`, ids come from `Services.uuid`, cloning uses JSON, and
   page work uses the reader document's own window (`atob`, `MutationObserver`).
-- **Storage** (`src/store.ts`): everything in memory, saved to `<data dir>/deflink/store.json`
+- **Storage** (`src/store.ts`): everything in memory, saved to `<data dir>/defn/store.json`
   (debounced 500 ms, atomic via `tmpPath`, flushed on shutdown), crops as `crops/<id>.png`. An
   unreadable store file is never overwritten until something changes. File I/O is injected, so the
   store is unit-tested in Node. The mapping from definition to mirrored annotation key lives here
@@ -315,12 +315,12 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   the popover will fall back to its text.
 - **Highlight mirroring:** after saving, `Zotero.Annotations.saveFromJSON(attachment, …)` creates a
   highlight with the reader's own position, page label and sort index, comment `term: <label>`,
-  tag `deflink:<kind>`, and a colour by kind from Zotero's palette. Failures are logged and don't
+  tag `defn:<kind>`, and a colour by kind from Zotero's palette. Failures are logged and don't
   undo the definition.
 - **Linking in Zotero** (`src/linker.ts`, one `ReaderLinker` per PDF reader): readers are found at
   startup (`Zotero.Reader._readers`) and as they open (`renderToolbar`), connected through the
   bridge, and re-linked per page when its text layer changes (MutationObserver) or the store
-  changes. Pages are linked with the shared `@deflink/viewer` code on DOM-built page text; underlines
+  changes. Pages are linked with the shared `@defn/viewer` code on DOM-built page text; underlines
   go in an overlay inside each `.page`, offset to its padding box, which is where the PDF.js
   viewport has its origin. Hit testing is by page geometry in a capture-phase `pointermove`, since
   Zotero's own layers sit on top. The plugin uses the default matcher options; there is no
@@ -334,3 +334,11 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **The Zotero store is separate from the web app's IndexedDB.** Its definitions are keyed by
   attachment item key, the web app's by file hash. Sharing data through export/import would need a
   docId mapping, so it is left for later.
+
+## Rename to Defn
+
+- **The project is renamed from DefLink to Defn**, everywhere: package scope `@defn/*`, the
+  IndexedDB database, localStorage keys, the export format name, the Zotero plugin id
+  (`defn@defn.local`), its data directory and highlight tags (`defn:<kind>`). This was done before
+  any release, so the old browser and Zotero data is not migrated. Import still accepts export files
+  whose format is `"deflink"`. The repository folder keeps its old name.

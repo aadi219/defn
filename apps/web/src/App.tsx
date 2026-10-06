@@ -145,7 +145,7 @@ function Shell() {
   useEffect(() => () => void doc?.pdf.loadingTask.destroy(), [doc]);
 
   useEffect(() => {
-    document.title = doc ? `${doc.title} — DefLink` : "DefLink";
+    document.title = doc ? `${doc.title} — Defn` : "Defn";
   }, [doc]);
 
   const onDrop = (e: DragEvent) => {
@@ -251,7 +251,7 @@ function Shell() {
         </StoreProvider>
       ) : (
         <main className="start">
-          <h1>DefLink</h1>
+          <h1>Defn</h1>
           <p>Open a PDF to start marking definitions.</p>
           <div className="start-actions">
             {openButton}

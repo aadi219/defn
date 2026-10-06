@@ -7,7 +7,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
-import type { Definition, Suppression, Term } from "@deflink/core";
+import type { Definition, Suppression, Term } from "@defn/core";
 import { listDefinitionsForDoc, listSuppressionsForDoc, listTerms } from "../store/repo";
 
 /** Mount with `key={docId}` so each document starts from a fresh state. */
@@ -41,7 +41,7 @@ interface StoreValue extends State {
 
 const StoreContext = createContext<StoreValue | null>(null);
 
-const STORE_CHANGED = "deflink:store-changed";
+const STORE_CHANGED = "defn:store-changed";
 
 /** Tells every mounted StoreProvider to reload, after a bulk change such as an import. */
 export function notifyStoreChanged() {

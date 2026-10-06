@@ -21,7 +21,7 @@ export interface ExportCrop {
 
 /** The JSON export of the whole store (PLAN.md §8). */
 export interface ExportFileV1 {
-  format: "deflink";
+  format: "defn";
   version: 1;
   /** ISO timestamp. */
   exportedAt: string;
@@ -199,10 +199,11 @@ function list<T extends { id: string }>(
 export function validateExportFile(json: unknown): ValidationResult {
   try {
     const root = obj(json, "file");
-    if (root.format !== "deflink") fail("format", `"deflink"`);
+    // "deflink" is the format name from before the project was renamed to Defn.
+    if (root.format !== "defn" && root.format !== "deflink") fail("format", `"defn"`);
     if (root.version !== 1) fail("version", "1 (other versions are not supported)");
     const file: ExportFileV1 = {
-      format: "deflink",
+      format: "defn",
       version: 1,
       exportedAt: str(root, "exportedAt", "file"),
       documents: list(root, "documents", documentRecord),

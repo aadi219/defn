@@ -1,5 +1,5 @@
-import type { PdfRect } from "@deflink/core";
-import type { PointConverter } from "@deflink/viewer";
+import type { PdfRect } from "@defn/core";
+import type { PointConverter } from "@defn/viewer";
 
 /**
  * All access to Zotero reader internals lives here (PLAN.md §M9), so a Zotero update can only
@@ -33,7 +33,7 @@ interface ContentPdfApp {
 type Waived<T> = { wrappedJSObject?: T };
 
 export interface ReaderBridge {
-  /** DefLink document id: the attachment item key. */
+  /** Defn document id: the attachment item key. */
   docId: string;
   title: string;
   fileName: string;

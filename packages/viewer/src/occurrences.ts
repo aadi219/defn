@@ -1,4 +1,4 @@
-import type { Definition, Suppression, Term } from "@deflink/core";
+import type { Definition, Suppression, Term } from "@defn/core";
 import type { PageCssRect } from "./coords";
 
 /** A linked occurrence of a term on a rendered page. */

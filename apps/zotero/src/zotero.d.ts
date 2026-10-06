@@ -1,5 +1,5 @@
 /**
- * Minimal declarations for the Zotero / Firefox globals DefLink uses, checked against the
+ * Minimal declarations for the Zotero / Firefox globals Defn uses, checked against the
  * zotero/zotero and zotero/reader sources for Zotero 8–9 (see docs/DECISIONS.md, M9). Reader
  * internals are typed as optional and only touched in readerBridge.ts.
  */

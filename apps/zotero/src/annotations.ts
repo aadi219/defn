@@ -1,4 +1,4 @@
-import type { Definition, DefinitionKind, Term } from "@deflink/core";
+import type { Definition, DefinitionKind, Term } from "@defn/core";
 
 /** Zotero's annotation palette, so mirrored highlights look native. */
 export const KIND_COLORS: Record<DefinitionKind, string> = {
@@ -13,7 +13,7 @@ export const KIND_COLORS: Record<DefinitionKind, string> = {
 
 /**
  * The `Zotero.Annotations.saveFromJSON` payload mirroring a definition as a highlight (PLAN.md
- * §M9): tag `deflink:<kind>`, comment `term: <label>`. Position, page label and sort index come
+ * §M9): tag `defn:<kind>`, comment `term: <label>`. Position, page label and sort index come
  * from the reader's own selection annotation, so the highlight sorts and renders like any other.
  */
 export function highlightJSON(
@@ -31,6 +31,6 @@ export function highlightJSON(
     ...(selection.pageLabel ? { pageLabel: selection.pageLabel } : {}),
     ...(selection.sortIndex ? { sortIndex: selection.sortIndex } : {}),
     position: selection.position,
-    tags: [{ name: `deflink:${definition.kind}` }],
+    tags: [{ name: `defn:${definition.kind}` }],
   };
 }

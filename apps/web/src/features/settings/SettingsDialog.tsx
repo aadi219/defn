@@ -82,7 +82,7 @@ export function SettingsDialog({ onClose }: { onClose(): void }) {
       <fieldset className="settings-group">
         <legend>Storage</legend>
         <p className="muted">
-          {usage ? `This browser stores ${usage} for DefLink.` : "Storage usage is unavailable."}{" "}
+          {usage ? `This browser stores ${usage} for Defn.` : "Storage usage is unavailable."}{" "}
           Use Data ▾ → Export all… to back up.
         </p>
       </fieldset>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Definition, DocumentRecord, Term } from "@deflink/core";
+import type { Definition, DocumentRecord, Term } from "@defn/core";
 import { buildRows, filterRows, sortRows } from "../glossaryRows";
 
 function term(id: string, label: string, overrides: Partial<Term> = {}): Term {

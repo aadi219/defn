@@ -5,17 +5,17 @@ import {
   type ExportFileV1,
   type ImportCounts,
   type ImportPlan,
-} from "@deflink/core";
+} from "@defn/core";
 import { notifyStoreChanged } from "../../state/store";
 import { exportStore, importStore } from "../../store/repo";
 import { useToast } from "../toast/toast";
 import { onMenuKeyDown } from "../../util/menuKeys";
 import { useModalDialog } from "../../util/useModalDialog";
 
-/** `deflink-YYYY-MM-DD.json` in local time (PLAN.md §8). */
+/** `defn-YYYY-MM-DD.json` in local time (PLAN.md §8). */
 export function exportFileName(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `deflink-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.json`;
+  return `defn-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.json`;
 }
 
 function download(name: string, blob: Blob) {
@@ -88,7 +88,7 @@ export function DataMenu() {
     }
     const result = validateExportFile(json);
     if (!result.ok) {
-      toast(`“${f.name}” is not a DefLink export (${result.error}).`);
+      toast(`“${f.name}” is not a Defn export (${result.error}).`);
       return;
     }
     setPending({ name: f.name, file: result.file });

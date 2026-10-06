@@ -1,5 +1,5 @@
 {
-  "name": "@deflink/web",
+  "name": "@defn/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,8 +12,8 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@deflink/core": "workspace:*",
-    "@deflink/viewer": "workspace:*",
+    "@defn/core": "workspace:*",
+    "@defn/viewer": "workspace:*",
     "@floating-ui/react": "^0.27.20",
     "dexie": "^4.4.6",
     "pdfjs-dist": "6.3.289",

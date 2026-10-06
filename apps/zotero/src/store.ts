@@ -5,11 +5,11 @@ import {
   type DocumentRecord,
   type Suppression,
   type Term,
-} from "@deflink/core";
+} from "@defn/core";
 
-/** On-disk layout of `deflink/store.json` in the Zotero data directory (PLAN.md §M9). */
+/** On-disk layout of `defn/store.json` in the Zotero data directory (PLAN.md §M9). */
 export interface StoreFile {
-  format: "deflink-zotero";
+  format: "defn-zotero";
   version: 1;
   documents: DocumentRecord[];
   terms: Term[];
@@ -35,7 +35,7 @@ const SAVE_DELAY_MS = 500;
 
 export function emptyStore(): StoreFile {
   return {
-    format: "deflink-zotero",
+    format: "defn-zotero",
     version: 1,
     documents: [],
     terms: [],
@@ -52,7 +52,7 @@ const isArray = (v: unknown): v is unknown[] => Array.isArray(v);
 export function parseStoreFile(json: unknown): StoreFile | null {
   if (typeof json !== "object" || json === null) return null;
   const o = json as Record<string, unknown>;
-  if (o.format !== "deflink-zotero" || o.version !== 1) return null;
+  if (o.format !== "defn-zotero" || o.version !== 1) return null;
   const lists = ["documents", "terms", "definitions", "crops", "suppressions"] as const;
   if (!lists.every((k) => isArray(o[k]))) return null;
   const keys = o.annotationKeys;
@@ -79,7 +79,7 @@ export interface NewDefinitionInput {
  * The plugin's store: everything in memory, persisted as one JSON file (debounced) plus one PNG per
  * crop. Listeners run after every change, e.g. to re-link open readers.
  */
-export class DefLinkStore {
+export class DefnStore {
   private data: StoreFile = emptyStore();
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private saving: Promise<void> = Promise.resolve();

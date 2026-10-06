@@ -1,5 +1,5 @@
 import type { TextContent, TextItem } from "pdfjs-dist/types/src/display/api";
-import { joinItems, type ItemGeometry, type PageText, type Segment } from "@deflink/viewer";
+import { joinItems, type ItemGeometry, type PageText, type Segment } from "@defn/viewer";
 
 export function itemGeometry(item: TextItem): ItemGeometry {
   const [, , c, d, e, f] = item.transform as number[];

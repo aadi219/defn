@@ -1,4 +1,4 @@
-import { createMatcherCache } from "@deflink/core";
+import { createMatcherCache } from "@defn/core";
 import {
   buildPageTextFromDom,
   computeOccurrences,
@@ -7,19 +7,19 @@ import {
   pdfRectToCss,
   type Occurrence,
   type PageCssRect,
-} from "@deflink/viewer";
+} from "@defn/viewer";
 import { ensureStyle, h } from "./dom";
 import { DefinitionPopover } from "./popover";
 import type { ReaderBridge } from "./readerBridge";
-import type { DefLinkStore } from "./store";
+import type { DefnStore } from "./store";
 
 const OPEN_DELAY_MS = 300;
 const CLOSE_DELAY_MS = 200;
 const CLICK_SLOP_PX = 4;
 
 const CSS = `
-.deflink-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-.deflink-underline { position: absolute; box-sizing: border-box;
+.defn-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.defn-underline { position: absolute; box-sizing: border-box;
   border-bottom: 1.5px dotted rgb(47 91 211 / 0.85); }
 `;
 
@@ -51,7 +51,7 @@ export class ReaderLinker {
 
   constructor(
     private readonly bridge: ReaderBridge,
-    private readonly store: DefLinkStore,
+    private readonly store: DefnStore,
   ) {}
 
   get alive(): boolean {
@@ -61,7 +61,7 @@ export class ReaderLinker {
 
   start() {
     const { viewDoc } = this.bridge;
-    ensureStyle(viewDoc, "deflink-linker-style", CSS);
+    ensureStyle(viewDoc, "defn-linker-style", CSS);
     this.disposers.push(this.bridge.observeTextLayers((page) => this.linkPage(page)));
     this.disposers.push(this.store.subscribe(() => this.relinkAll()));
     this.listenForPointer();
@@ -92,9 +92,9 @@ export class ReaderLinker {
       this.pages.delete(page);
       return;
     }
-    let overlay = pageEl.querySelector<HTMLElement>(":scope > .deflink-overlay");
+    let overlay = pageEl.querySelector<HTMLElement>(":scope > .defn-overlay");
     if (!overlay) {
-      overlay = h(bridge.viewDoc, "div", { className: "deflink-overlay", "aria-hidden": "true" });
+      overlay = h(bridge.viewDoc, "div", { className: "defn-overlay", "aria-hidden": "true" });
       pageEl.append(overlay);
     }
 
@@ -124,7 +124,7 @@ export class ReaderLinker {
     overlay.replaceChildren(
       ...occurrences.flatMap((o) =>
         o.rects.map((r) => {
-          const line = h(bridge.viewDoc, "div", { className: "deflink-underline" });
+          const line = h(bridge.viewDoc, "div", { className: "defn-underline" });
           Object.assign(line.style, {
             left: `${r.left}px`,
             top: `${r.top}px`,

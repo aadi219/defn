@@ -1,5 +1,5 @@
 {
-  "name": "@deflink/zotero",
+  "name": "@defn/zotero",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,8 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@deflink/core": "workspace:*",
-    "@deflink/viewer": "workspace:*"
+    "@defn/core": "workspace:*",
+    "@defn/viewer": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

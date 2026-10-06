@@ -1,27 +1,27 @@
-/* Zotero bootstrap plugin entry (Zotero 8–9). The bundled code in content/deflink.js defines
-   `DefLink` (see apps/zotero/src/index.ts). */
+/* Zotero bootstrap plugin entry (Zotero 8–9). The bundled code in content/defn.js defines
+   `Defn` (see apps/zotero/src/index.ts). */
 
-var DefLink;
+var Defn;
 
 function install() {}
 
 async function startup({ id, version, rootURI }) {
   await Zotero.initializationPromise;
-  Services.scriptloader.loadSubScript(rootURI + "content/deflink.js");
-  await DefLink.startup({ id, version, rootURI });
+  Services.scriptloader.loadSubScript(rootURI + "content/defn.js");
+  await Defn.startup({ id, version, rootURI });
 }
 
 function onMainWindowLoad({ window }) {
-  DefLink?.onMainWindowLoad(window);
+  Defn?.onMainWindowLoad(window);
 }
 
 function onMainWindowUnload({ window }) {
-  DefLink?.onMainWindowUnload(window);
+  Defn?.onMainWindowUnload(window);
 }
 
 async function shutdown() {
-  await DefLink?.shutdown();
-  DefLink = undefined;
+  await Defn?.shutdown();
+  Defn = undefined;
 }
 
 function uninstall() {}

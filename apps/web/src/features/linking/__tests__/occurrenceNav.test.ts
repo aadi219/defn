@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Occurrence } from "@deflink/viewer";
+import type { Occurrence } from "@defn/viewer";
 import { orderOccurrences, stepOccurrence } from "../occurrenceNav";
 
 const occ = (termId: string, start: number, left: number, top: number): Occurrence => ({

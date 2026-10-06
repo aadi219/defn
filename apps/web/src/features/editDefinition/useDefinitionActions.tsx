@@ -1,5 +1,5 @@
 import { useCallback, useId, useRef, useState, type ReactNode } from "react";
-import type { Definition, Term } from "@deflink/core";
+import type { Definition, Term } from "@defn/core";
 import { useCropUrl } from "../popover/useCropUrl";
 import {
   MarkDefinitionDialog,

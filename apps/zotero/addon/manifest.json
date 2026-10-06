@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
-  "name": "DefLink",
+  "name": "Defn",
   "version": "0.1.0",
   "description": "Mark definitions in PDFs and link every other occurrence of the term to them.",
-  "author": "DefLink",
+  "author": "Defn",
   "applications": {
     "zotero": {
-      "id": "deflink@deflink.local",
-      "update_url": "https://example.invalid/deflink/updates.json",
+      "id": "defn@defn.local",
+      "update_url": "https://example.invalid/defn/updates.json",
       "strict_min_version": "8.0",
       "strict_max_version": "9.0.*"
     }

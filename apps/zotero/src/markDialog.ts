@@ -7,7 +7,7 @@ import {
   type DefinitionKind,
   type Scope,
   type Term,
-} from "@deflink/core";
+} from "@defn/core";
 import { ensureStyle, h } from "./dom";
 
 export interface MarkValues {
@@ -33,24 +33,24 @@ export const KIND_LABELS: Record<DefinitionKind, string> = {
 };
 
 const CSS = `
-.deflink-dialog { width: min(520px, calc(100vw - 2rem)); border: 1px solid #ccc; border-radius: 8px;
+.defn-dialog { width: min(520px, calc(100vw - 2rem)); border: 1px solid #ccc; border-radius: 8px;
   padding: 1rem; font: 13px system-ui, sans-serif; color: #222; background: #fff; }
-.deflink-dialog::backdrop { background: rgb(0 0 0 / 0.3); }
-.deflink-dialog h2 { margin: 0 0 0.6rem; font-size: 15px; }
-.deflink-dialog .deflink-text { max-height: 6.5em; overflow: auto; margin: 0 0 0.6rem; color: #555;
+.defn-dialog::backdrop { background: rgb(0 0 0 / 0.3); }
+.defn-dialog h2 { margin: 0 0 0.6rem; font-size: 15px; }
+.defn-dialog .defn-text { max-height: 6.5em; overflow: auto; margin: 0 0 0.6rem; color: #555;
   border-left: 3px solid #ffd400; padding-left: 0.5rem; }
-.deflink-dialog label.field { display: flex; flex-direction: column; gap: 2px; margin-bottom: 0.5rem; }
-.deflink-dialog label.field > span { color: #666; font-size: 12px; }
-.deflink-dialog input[type=text], .deflink-dialog select { font: inherit; padding: 4px 6px; }
-.deflink-dialog .row { display: flex; gap: 0.75rem; }
-.deflink-dialog .row > * { flex: 1; }
-.deflink-dialog .inline { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; }
-.deflink-dialog .hint { color: #666; font-size: 12px; margin: -0.3rem 0 0.5rem; }
-.deflink-dialog .collision { background: #fff6db; border: 1px solid #f0d78a; border-radius: 6px;
+.defn-dialog label.field { display: flex; flex-direction: column; gap: 2px; margin-bottom: 0.5rem; }
+.defn-dialog label.field > span { color: #666; font-size: 12px; }
+.defn-dialog input[type=text], .defn-dialog select { font: inherit; padding: 4px 6px; }
+.defn-dialog .row { display: flex; gap: 0.75rem; }
+.defn-dialog .row > * { flex: 1; }
+.defn-dialog .inline { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; }
+.defn-dialog .hint { color: #666; font-size: 12px; margin: -0.3rem 0 0.5rem; }
+.defn-dialog .collision { background: #fff6db; border: 1px solid #f0d78a; border-radius: 6px;
   padding: 0.4rem 0.6rem; margin-bottom: 0.5rem; }
-.deflink-dialog .error { color: #c62828; }
-.deflink-dialog .actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; }
-.deflink-dialog :focus-visible { outline: 2px solid #2f5bd3; outline-offset: 1px; }
+.defn-dialog .error { color: #c62828; }
+.defn-dialog .actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.75rem; }
+.defn-dialog :focus-visible { outline: 2px solid #2f5bd3; outline-offset: 1px; }
 `;
 
 /**
@@ -66,7 +66,7 @@ export function openMarkDialog(options: {
   onSave(values: MarkValues, target: MarkTarget): Promise<void>;
 }): Promise<boolean> {
   const { doc, docId, text, terms, onSave } = options;
-  ensureStyle(doc, "deflink-dialog-style", CSS);
+  ensureStyle(doc, "defn-dialog-style", CSS);
   const suggestion = suggestTerm(text);
 
   const term = h(doc, "input", {
@@ -82,8 +82,8 @@ export function openMarkDialog(options: {
     ...DEFINITION_KINDS.map((k) => h(doc, "option", { value: k }, KIND_LABELS[k])),
   );
   const label = h(doc, "input", { type: "text", placeholder: "e.g. Def 2.3" });
-  const scopeDoc = h(doc, "input", { type: "radio", name: "deflink-scope", checked: true });
-  const scopeGlobal = h(doc, "input", { type: "radio", name: "deflink-scope" });
+  const scopeDoc = h(doc, "input", { type: "radio", name: "defn-scope", checked: true });
+  const scopeGlobal = h(doc, "input", { type: "radio", name: "defn-scope" });
   const caseSensitive = h(doc, "input", { type: "checkbox" });
   const hint = h(
     doc,
@@ -110,7 +110,7 @@ export function openMarkDialog(options: {
     "form",
     { method: "dialog" },
     h(doc, "h2", {}, "Mark as definition"),
-    h(doc, "p", { className: "deflink-text" }, text),
+    h(doc, "p", { className: "defn-text" }, text),
     h(doc, "label", { className: "field" }, h(doc, "span", {}, "Term"), term),
     hint,
     collisionBox,
@@ -136,7 +136,7 @@ export function openMarkDialog(options: {
   const dialog = h(
     doc,
     "dialog",
-    { className: "deflink-dialog", "aria-label": "Mark as definition" },
+    { className: "defn-dialog", "aria-label": "Mark as definition" },
     form,
   );
 

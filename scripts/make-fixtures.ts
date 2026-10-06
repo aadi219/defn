@@ -19,7 +19,7 @@ interface Fonts {
 async function newDoc(title: string): Promise<{ doc: PDFDocument; fonts: Fonts }> {
   const doc = await PDFDocument.create();
   doc.setTitle(title);
-  doc.setProducer("deflink make-fixtures");
+  doc.setProducer("defn make-fixtures");
   const fonts = {
     regular: await doc.embedFont(StandardFonts.TimesRoman),
     bold: await doc.embedFont(StandardFonts.TimesRomanBold),

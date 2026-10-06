@@ -1,6 +1,6 @@
 /**
- * Builds the Zotero plugin: bundles src/index.ts into addon/content/deflink.js and packages
- * dist/deflink-<version>.xpi (PLAN.md §M9). Run with `pnpm --filter @deflink/zotero build`.
+ * Builds the Zotero plugin: bundles src/index.ts into addon/content/defn.js and packages
+ * dist/defn-<version>.xpi (PLAN.md §M9). Run with `pnpm --filter @defn/zotero build`.
  */
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
@@ -28,10 +28,10 @@ for (const file of ["manifest.json", "bootstrap.js"]) {
 }
 await build({
   entryPoints: [join(root, "src/index.ts")],
-  outfile: join(staging, "content/deflink.js"),
+  outfile: join(staging, "content/defn.js"),
   bundle: true,
   format: "iife",
-  globalName: "DefLink",
+  globalName: "Defn",
   target: "firefox128",
   platform: "browser",
   charset: "utf8",
@@ -47,6 +47,6 @@ const entries: ZipEntry[] = await Promise.all(
     data: new Uint8Array(await readFile(file)),
   })),
 );
-const xpi = join(out, `deflink-${manifest.version}.xpi`);
+const xpi = join(out, `defn-${manifest.version}.xpi`);
 await writeFile(xpi, createZip(entries));
 console.log(`Built ${relative(root, xpi)} (${entries.length} files)`);

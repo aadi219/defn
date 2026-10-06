@@ -1,4 +1,4 @@
-import { matchText, type TermMatcher } from "@deflink/core";
+import { matchText, type TermMatcher } from "@defn/core";
 
 /**
  * Terms mentioned in a definition's text (PLAN.md §7.4 nested linking): term ids in order of

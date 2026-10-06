@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Definition, Suppression, Term } from "@deflink/core";
+import type { Definition, Suppression, Term } from "@defn/core";
 import {
   filterOccurrences,
   firstDefinitionPages,

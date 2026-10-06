@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Definition, Term } from "@deflink/core";
+import type { Definition, Term } from "@defn/core";
 import { highlightJSON } from "../src/annotations";
 
 const term: Term = {
@@ -41,7 +41,7 @@ describe("highlightJSON", () => {
       pageLabel: "3",
       sortIndex: "00002|000123|00456",
       position,
-      tags: [{ name: "deflink:theorem" }],
+      tags: [{ name: "defn:theorem" }],
     });
   });
 

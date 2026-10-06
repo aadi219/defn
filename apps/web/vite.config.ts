@@ -16,7 +16,7 @@ const PDFJS_PREFIX = "/pdfjs/";
 function pdfjsAssets(): Plugin {
   let outDir = "dist";
   return {
-    name: "deflink-pdfjs-assets",
+    name: "defn-pdfjs-assets",
     configResolved(config) {
       outDir = join(config.root, config.build.outDir);
     },

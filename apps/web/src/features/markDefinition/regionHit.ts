@@ -1,5 +1,5 @@
-import type { Definition } from "@deflink/core";
-import { pdfRectToCss, type PointConverter } from "@deflink/viewer";
+import type { Definition } from "@defn/core";
+import { pdfRectToCss, type PointConverter } from "@defn/viewer";
 
 /** Definitions whose region contains the page-relative CSS point (x, y). */
 export function definitionsAt(

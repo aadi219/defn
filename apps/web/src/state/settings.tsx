@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   underlineColor: "#2f5bd3",
 };
 
-const KEY = "deflink:settings";
+const KEY = "defn:settings";
 
 /** Reads stored settings, keeping defaults for anything missing or of the wrong type. */
 export function parseSettings(json: string | null): Settings {

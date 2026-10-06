@@ -52,7 +52,7 @@ function sup(id: string, termId: string, offset = 5): Suppression {
 
 function file(overrides: Partial<ExportFileV1> = {}): ExportFileV1 {
   return {
-    format: "deflink",
+    format: "defn",
     version: 1,
     exportedAt: "2026-10-04T00:00:00.000Z",
     documents: [
@@ -88,9 +88,14 @@ describe("validateExportFile", () => {
     expect(result.ok && result.file.terms[0]).toEqual(file().terms[0]);
   });
 
+  it("accepts files exported under the old name", () => {
+    const result = validateExportFile(roundTrip({ ...file(), format: "deflink" }));
+    expect(result.ok && result.file.format).toBe("defn");
+  });
+
   it.each([
     ["not an object", 42, "file: expected an object"],
-    ["wrong format", { ...file(), format: "other" }, 'format: expected "deflink"'],
+    ["wrong format", { ...file(), format: "other" }, 'format: expected "defn"'],
     ["wrong version", { ...file(), version: 2 }, "version: expected 1"],
     ["missing array", { ...file(), terms: undefined }, "terms: expected an array"],
     [

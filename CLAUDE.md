@@ -1,4 +1,4 @@
-# DefLink — agent notes
+# Defn — agent notes
 
 - `PLAN.md` is the source of truth. Log deviations and design decisions in `docs/DECISIONS.md`.
 - Work one milestone at a time, in small increments, and report back for review after each step.

@@ -6,3 +6,6 @@ coverage/
 apps/web/test-results/
 apps/web/playwright-report/
 apps/web/e2e/fixtures/*.pdf
+PLAN.md
+CLAUDE.md
+docs

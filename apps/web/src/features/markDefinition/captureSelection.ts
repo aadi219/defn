@@ -1,14 +1,14 @@
-import type { PdfRect, StyledRun } from "@deflink/core";
+import type { PdfRect, StyledRun } from "@defn/core";
 import type { PDFPageProxy } from "pdfjs-dist";
 import {
   clientRectToPage,
   cssRectToPdf,
   mergeLineRects,
   type PointConverter,
-} from "@deflink/viewer";
+} from "@defn/viewer";
 import { resolveFontStyle } from "../../pdf/fontStyle";
-import type { PageText } from "@deflink/viewer";
-import { textNodeRects } from "@deflink/viewer";
+import type { PageText } from "@defn/viewer";
+import { textNodeRects } from "@defn/viewer";
 import { selectedRawRange, styledRuns } from "./selectionRuns";
 
 export interface CapturedSelection {

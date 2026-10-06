@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { PageViewport, PDFPageProxy } from "pdfjs-dist";
 import { clearSegmentOutlines, drawSegmentOutlines } from "../features/debug/segmentOutlines";
-import type { PageText } from "@deflink/viewer";
+import type { PageText } from "@defn/viewer";
 import { buildPageText, textItems } from "./pageText";
 import type { RenderedTextLayer } from "./PdfPage";
 
@@ -76,13 +76,13 @@ export function usePageTexts(debugSegments: boolean, onPageText?: (entry: PageTe
     }
   }, [debugSegments, liveEntries]);
 
-  // Dev aid: inspect page text from the console, e.g. `__deflink.pageText(1).raw`.
+  // Dev aid: inspect page text from the console, e.g. `__defn.pageText(1).raw`.
   useEffect(() => {
     if (!import.meta.env.DEV) return;
-    const w = window as unknown as { __deflink?: object };
-    w.__deflink = { pageText: getPageText };
+    const w = window as unknown as { __defn?: object };
+    w.__defn = { pageText: getPageText };
     return () => {
-      delete w.__deflink;
+      delete w.__defn;
     };
   }, [getPageText]);
 

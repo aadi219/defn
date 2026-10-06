@@ -7,7 +7,7 @@ import {
   type DocumentRecord,
   type Scope,
   type Term,
-} from "@deflink/core";
+} from "@defn/core";
 import { Modal } from "../../components/Modal";
 import type { TermFields } from "../../store/repo";
 import { scopeLabel } from "./glossaryRows";

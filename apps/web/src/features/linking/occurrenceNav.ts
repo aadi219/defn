@@ -1,5 +1,5 @@
-import type { PageCssRect } from "@deflink/viewer";
-import type { Occurrence } from "@deflink/viewer";
+import type { PageCssRect } from "@defn/viewer";
+import type { Occurrence } from "@defn/viewer";
 
 export interface NavItem {
   page: number;

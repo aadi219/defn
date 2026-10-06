@@ -208,10 +208,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@deflink/core':
+      '@defn/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@deflink/viewer':
+      '@defn/viewer':
         specifier: workspace:*
         version: link:../../packages/viewer
       '@floating-ui/react':
@@ -251,10 +251,10 @@ importers:
 
   apps/zotero:
     dependencies:
-      '@deflink/core':
+      '@defn/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@deflink/viewer':
+      '@defn/viewer':
         specifier: workspace:*
         version: link:../../packages/viewer
     devDependencies:
@@ -276,7 +276,7 @@ importers:
 
   packages/viewer:
     dependencies:
-      '@deflink/core':
+      '@defn/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from "dexie";
-import type { Crop, Definition, DocumentRecord, Suppression, Term } from "@deflink/core";
+import type { Crop, Definition, DocumentRecord, Suppression, Term } from "@defn/core";
 import type { PdfFileHandle } from "../pdf/fileAccess";
 
 /** Where a document's file lives, for reopening it from the recent list (Chromium only). */
@@ -8,7 +8,7 @@ export interface FileHandleRecord {
   handle: PdfFileHandle;
 }
 
-export class DefLinkDB extends Dexie {
+export class DefnDB extends Dexie {
   documents!: EntityTable<DocumentRecord, "id">;
   terms!: EntityTable<Term, "id">;
   definitions!: EntityTable<Definition, "id">;
@@ -16,7 +16,7 @@ export class DefLinkDB extends Dexie {
   suppressions!: EntityTable<Suppression, "id">;
   fileHandles!: EntityTable<FileHandleRecord, "docId">;
 
-  constructor(name = "deflink") {
+  constructor(name = "defn") {
     super(name);
     this.version(1).stores({
       documents: "id, lastOpenedAt",
@@ -29,4 +29,4 @@ export class DefLinkDB extends Dexie {
   }
 }
 
-export const db = new DefLinkDB();
+export const db = new DefnDB();

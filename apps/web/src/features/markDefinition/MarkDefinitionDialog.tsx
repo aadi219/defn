@@ -8,7 +8,7 @@ import {
   type DefinitionKind,
   type Scope,
   type Term,
-} from "@deflink/core";
+} from "@defn/core";
 import { useModalDialog } from "../../util/useModalDialog";
 
 export interface MarkDefinitionValues {

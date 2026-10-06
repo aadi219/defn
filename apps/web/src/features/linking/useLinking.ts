@@ -4,11 +4,11 @@ import {
   type Definition,
   type Suppression,
   type Term,
-} from "@deflink/core";
-import { pdfRectToCss } from "@deflink/viewer";
+} from "@defn/core";
+import { pdfRectToCss } from "@defn/viewer";
 import type { PageTextEntry } from "../../pdf/usePageTexts";
-import { computeOccurrences } from "@deflink/viewer";
-import { filterOccurrences, firstDefinitionPages, type PageOccurrences } from "@deflink/viewer";
+import { computeOccurrences } from "@defn/viewer";
+import { filterOccurrences, firstDefinitionPages, type PageOccurrences } from "@defn/viewer";
 
 /** Linking a page above this many ms is logged in dev builds (PLAN.md §11 budget). */
 const SLOW_LINK_MS = 30;

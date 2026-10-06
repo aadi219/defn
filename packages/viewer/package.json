@@ -1,5 +1,5 @@
 {
-  "name": "@deflink/viewer",
+  "name": "@defn/viewer",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@deflink/core": "workspace:*"
+    "@defn/core": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^5.0.3"

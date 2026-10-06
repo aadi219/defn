@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import type { Definition, DocumentRecord, Term } from "@deflink/core";
+import type { Definition, DocumentRecord, Term } from "@defn/core";
 import { notifyStoreChanged } from "../../state/store";
 import {
   deleteTerms,

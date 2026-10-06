@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Term } from "@deflink/core";
+import type { Term } from "@defn/core";
 import {
-  DefLinkStore,
+  DefnStore,
   emptyStore,
   parseStoreFile,
   TermCollisionError,
@@ -65,13 +65,13 @@ describe("parseStoreFile", () => {
   });
 });
 
-describe("DefLinkStore", () => {
+describe("DefnStore", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
   it("saves a new definition with its term and crop, then persists after a delay", async () => {
     const { io, files } = fakeIO();
-    const store = new DefLinkStore(io, "/data");
+    const store = new DefnStore(io, "/data");
     await store.load();
     const changes = vi.fn();
     store.subscribe(changes);
@@ -90,19 +90,19 @@ describe("DefLinkStore", () => {
 
   it("reloads what it saved", async () => {
     const { io } = fakeIO();
-    const a = new DefLinkStore(io, "/data");
+    const a = new DefnStore(io, "/data");
     await a.load();
     await a.saveNewDefinition(input({ create: term("t1", "compact space") }));
     a.setAnnotationKey("d1", "ABCD1234");
     await a.flush();
-    const b = new DefLinkStore(io, "/data");
+    const b = new DefnStore(io, "/data");
     await b.load();
     expect(b.definitionsForTerm("t1")).toHaveLength(1);
   });
 
   it("rejects a colliding new term and adds to an existing one", async () => {
     const { io } = fakeIO();
-    const store = new DefLinkStore(io, "/data");
+    const store = new DefnStore(io, "/data");
     await store.load();
     await store.saveNewDefinition(input({ create: term("t1", "compact space") }));
     await expect(
@@ -115,7 +115,7 @@ describe("DefLinkStore", () => {
 
   it("starts empty from an unreadable file without overwriting it", async () => {
     const { io, files } = fakeIO({ something: "else" });
-    const store = new DefLinkStore(io, "/data");
+    const store = new DefnStore(io, "/data");
     await store.load();
     await store.flush();
     expect(store.terms).toEqual([]);

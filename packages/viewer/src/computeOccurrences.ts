@@ -1,4 +1,4 @@
-import { matchText, normRangeToRaw, type TermMatcher } from "@deflink/core";
+import { matchText, normRangeToRaw, type TermMatcher } from "@defn/core";
 import { clientRectToPage, mergeLineRects } from "./coords";
 import { rawOffsetToDom, type PageText } from "./pageText";
 import { textNodeRects } from "./rangeRects";

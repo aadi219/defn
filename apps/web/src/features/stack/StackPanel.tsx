@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import type { Definition, DocumentRecord, Term, TermMatcher } from "@deflink/core";
+import type { Definition, DocumentRecord, Term, TermMatcher } from "@defn/core";
 import { getDefinitions, getDocuments } from "../../store/repo";
 import { DefinitionActions, KIND_LABELS } from "../popover/DefinitionPopover";
 import { useCropUrl } from "../popover/useCropUrl";

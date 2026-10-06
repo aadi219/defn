@@ -14,8 +14,8 @@ import {
   type DefinitionKind,
   type DocumentRecord,
   type Term,
-} from "@deflink/core";
-import type { PageCssRect } from "@deflink/viewer";
+} from "@defn/core";
+import type { PageCssRect } from "@defn/viewer";
 import { getDocuments, listDefinitionsForTerm } from "../../store/repo";
 import { useCropUrl } from "./useCropUrl";
 

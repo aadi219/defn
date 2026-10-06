@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { parseStack, type StackState } from "./stackState";
 
-const PANEL_KEY = "deflink:stackPanel";
+const PANEL_KEY = "defn:stackPanel";
 export const PANEL_MIN_WIDTH = 260;
 export const PANEL_MAX_WIDTH = 720;
 const PANEL_DEFAULT_WIDTH = 360;
@@ -24,7 +24,7 @@ function write(key: string, value: string) {
 
 /** The pinned stack for a document, persisted in localStorage (PLAN.md §7.4). */
 export function useStack(docId: string) {
-  const key = `deflink:stack:${docId}`;
+  const key = `defn:stack:${docId}`;
   const [state, setState] = useState<StackState>(() => parseStack(read(key)));
   useEffect(() => write(key, JSON.stringify(state)), [key, state]);
   return [state, setState] as const;

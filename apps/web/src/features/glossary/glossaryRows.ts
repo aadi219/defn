@@ -1,4 +1,4 @@
-import type { Definition, DocumentRecord, Term } from "@deflink/core";
+import type { Definition, DocumentRecord, Term } from "@defn/core";
 
 export interface GlossaryRow {
   term: Term;

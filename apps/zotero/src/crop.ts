@@ -1,5 +1,5 @@
-import type { PdfRect } from "@deflink/core";
-import { padAndClamp, pdfRectToCss, unionPdfRects } from "@deflink/viewer";
+import type { PdfRect } from "@defn/core";
+import { padAndClamp, pdfRectToCss, unionPdfRects } from "@defn/viewer";
 import type { ReaderBridge } from "./readerBridge";
 
 /** Padding around the selection, in PDF units (PLAN.md §6.3). */

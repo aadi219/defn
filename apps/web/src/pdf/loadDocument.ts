@@ -1,11 +1,11 @@
 import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { joinItems, pageHasText } from "@deflink/viewer";
+import { joinItems, pageHasText } from "@defn/viewer";
 import { itemGeometry, textItems } from "./pageText";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-/** Served by the `deflink-pdfjs-assets` Vite plugin. */
+/** Served by the `defn-pdfjs-assets` Vite plugin. */
 const ASSETS = `${import.meta.env.BASE_URL}pdfjs/`;
 
 export interface LoadedPdf {
