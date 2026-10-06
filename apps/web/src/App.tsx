@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { DocumentView } from "./DocumentView";
 import { DataMenu } from "./features/data/DataMenu";
+import { GlossaryDialog } from "./features/glossary/GlossaryDialog";
 import { ToastProvider } from "./features/toast/toast";
 import { detectTextLayer, isPdfFile, loadPdf, type LoadedPdf } from "./pdf/loadDocument";
 import { StoreProvider } from "./state/store";
@@ -24,6 +25,7 @@ function Shell() {
   const [load, setLoad] = useState<LoadState>({ status: "idle" });
   const [dragging, setDragging] = useState(false);
   const [noTextLayer, setNoTextLayer] = useState(false);
+  const [glossaryOpen, setGlossaryOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const openFile = useCallback(async (file: File) => {
@@ -68,6 +70,11 @@ function Shell() {
   const openButton = (
     <button type="button" onClick={() => fileInput.current?.click()}>
       Open PDF…
+    </button>
+  );
+  const glossaryButton = (
+    <button type="button" onClick={() => setGlossaryOpen(true)}>
+      Glossary
     </button>
   );
 
@@ -117,6 +124,7 @@ function Shell() {
             toolbarStart={
               <>
                 {openButton}
+                {glossaryButton}
                 <DataMenu />
                 <span className="doc-title" title={doc.fileName}>
                   {doc.title}
@@ -131,6 +139,7 @@ function Shell() {
           <p>Open a PDF to start marking definitions.</p>
           <div className="start-actions">
             {openButton}
+            {glossaryButton}
             <DataMenu />
           </div>
           <p className="hint">…or drop a PDF anywhere on this window.</p>
@@ -142,6 +151,9 @@ function Shell() {
         </div>
       )}
       {dragging && <div className="drop-overlay">Drop PDF to open</div>}
+      {glossaryOpen && (
+        <GlossaryDialog currentDocId={doc?.docId} onClose={() => setGlossaryOpen(false)} />
+      )}
     </div>
   );
 }

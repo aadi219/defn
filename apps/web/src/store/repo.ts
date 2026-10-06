@@ -1,5 +1,6 @@
 import {
   findCollision,
+  mergeTermInto,
   planImport,
   type Crop,
   type ExportCrop,
@@ -281,4 +282,76 @@ export async function importStore(
     await db.suppressions.bulkPut(plan.suppressions);
   });
   return plan;
+}
+
+export function listAllDefinitions(): Promise<Definition[]> {
+  return db.definitions.toArray();
+}
+
+export function listDocuments(): Promise<DocumentRecord[]> {
+  return db.documents.toArray();
+}
+
+export type TermFields = Pick<Term, "label" | "aliases" | "caseSensitive" | "scope">;
+
+/** Edits a term's own fields (glossary). Throws TermCollisionError on a collision in its scope. */
+export async function updateTerm(id: string, fields: TermFields): Promise<void> {
+  await db.transaction("rw", db.terms, async () => {
+    const term = await db.terms.get(id);
+    if (!term) throw new Error("This term no longer exists");
+    const updated: Term = { ...term, ...fields, updatedAt: Date.now() };
+    const existing = findCollision(await db.terms.toArray(), updated, id);
+    if (existing) throw new TermCollisionError(existing);
+    await db.terms.put(updated);
+  });
+}
+
+/**
+ * Merges term `sourceId` into `targetId` (PLAN.md §4.3): moves its definitions and suppressions,
+ * adds its surface forms as aliases (see `mergeTermInto`), and deletes it. Suppressions that become
+ * duplicates are dropped. Returns the forms that could not be added because of collisions.
+ */
+export async function mergeTerms(
+  sourceId: string,
+  targetId: string,
+): Promise<{ dropped: string[] }> {
+  if (sourceId === targetId) throw new Error("Cannot merge a term into itself");
+  return db.transaction("rw", [db.terms, db.definitions, db.suppressions], async () => {
+    const [source, target] = await db.terms.bulkGet([sourceId, targetId]);
+    if (!source || !target) throw new Error("One of the terms no longer exists");
+    const { term, dropped } = mergeTermInto(target, source, await db.terms.toArray(), Date.now());
+    await db.terms.put(term);
+    await db.definitions.where("termId").equals(sourceId).modify({ termId: targetId });
+    const targetKeys = new Set(
+      (await db.suppressions.where("termId").equals(targetId).toArray()).map(
+        (s) => `${s.docId}\u0000${s.page}\u0000${s.offset}`,
+      ),
+    );
+    for (const s of await db.suppressions.where("termId").equals(sourceId).toArray()) {
+      const key = `${s.docId}\u0000${s.page}\u0000${s.offset}`;
+      if (targetKeys.has(key)) await db.suppressions.delete(s.id);
+      else await db.suppressions.update(s.id, { termId: targetId });
+      targetKeys.add(key);
+    }
+    await db.terms.delete(sourceId);
+    return { dropped };
+  });
+}
+
+/** Deletes terms with their definitions, crops and suppressions in one transaction (§4.3). */
+export async function deleteTerms(ids: readonly string[]): Promise<void> {
+  const tables = [db.terms, db.definitions, db.crops, db.suppressions];
+  await db.transaction("rw", tables, async () => {
+    const definitions = await db.definitions
+      .where("termId")
+      .anyOf([...ids])
+      .toArray();
+    await db.crops.bulkDelete(definitions.map((d) => d.cropId));
+    await db.definitions.bulkDelete(definitions.map((d) => d.id));
+    await db.suppressions
+      .where("termId")
+      .anyOf([...ids])
+      .delete();
+    await db.terms.bulkDelete([...ids]);
+  });
 }

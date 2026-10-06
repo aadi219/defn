@@ -217,3 +217,19 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   and on the start screen. Import shows the file's contents, an "Overwrite" checkbox, then a summary
   of what was added, replaced, skipped and merged. After an import, a `deflink:store-changed` window
   event makes every mounted `StoreProvider` reload, so underlines update without reopening the PDF.
+- **Glossary** is a large modal `<dialog>` opened from a "Glossary" button next to "Open PDF…" (in
+  the document toolbar and on the start screen), so it works without an open document. It lists
+  every term in every scope. Row building, search (every word must appear in the label, aliases or
+  definition text, case-insensitive) and sorting (term, definition count, last updated, via the
+  column headers) are pure and tested in `glossaryRows.ts`.
+- **Orphaned terms** get an "orphaned" tag, and an "Orphaned only (n)" filter.
+- **Term edit** (label, aliases, scope, case sensitivity) uses its own dialog. Scope is chosen from
+  Global or any known document by title, and collisions are shown as you type.
+- **Merge into…** picks a target from a searchable list and previews the result: definitions moving,
+  new aliases, and forms dropped because another term uses them. `mergeTerms` also moves
+  suppressions, dropping any that would duplicate the target's.
+- **Delete** (per row, or bulk from checkboxes) confirms with the number of definitions that go with
+  the terms, and removes their crops and suppressions in one transaction (§4.3).
+- **Messages show inside the glossary**, not as toasts: toasts render beneath modal dialogs, which
+  sit in the browser's top layer. Every change fires `deflink:store-changed`, so underlines and
+  pinned cards behind the glossary update at once.
