@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { PageViewport, PDFPageProxy } from "pdfjs-dist";
 import { clearSegmentOutlines, drawSegmentOutlines } from "../features/debug/segmentOutlines";
-import { buildPageText, textItems, type PageText } from "./pageText";
+import type { PageText } from "@deflink/viewer";
+import { buildPageText, textItems } from "./pageText";
 import type { RenderedTextLayer } from "./PdfPage";
 
 /** A page whose text layer is rendered, with what is needed to locate text on it. */

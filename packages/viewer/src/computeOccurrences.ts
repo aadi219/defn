@@ -1,7 +1,7 @@
 import { matchText, normRangeToRaw, type TermMatcher } from "@deflink/core";
-import { clientRectToPage, mergeLineRects } from "../../pdf/coords";
-import { rawOffsetToDom, type PageText } from "../../pdf/pageText";
-import { textNodeRects } from "../../pdf/rangeRects";
+import { clientRectToPage, mergeLineRects } from "./coords";
+import { rawOffsetToDom, type PageText } from "./pageText";
+import { textNodeRects } from "./rangeRects";
 import type { Occurrence } from "./occurrences";
 
 /**
@@ -17,7 +17,7 @@ export function computeOccurrences(
   const textLayer = pageEl.querySelector(".textLayer");
   if (!textLayer || pageText.segments.length === 0) return [];
   const { folded, matches } = matchText(matcher, pageText.raw);
-  const range = document.createRange();
+  const range = pageEl.ownerDocument.createRange();
   const occurrences: Occurrence[] = [];
   for (const m of matches) {
     const [rawStart, rawEnd] = normRangeToRaw(folded, pageText.raw, m.start, m.end);

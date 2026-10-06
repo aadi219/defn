@@ -5,8 +5,10 @@
  */
 export function textNodeRects(range: Range, root: Node): DOMRect[] {
   const rects: DOMRect[] = [];
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  const part = document.createRange();
+  // The root's own document, so this also works inside iframes (e.g. the Zotero reader).
+  const doc = root.ownerDocument ?? (root as Document);
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const part = doc.createRange();
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (!range.intersectsNode(node)) continue;
     const text = node as Text;

@@ -5,10 +5,10 @@ import {
   cssRectToPdf,
   mergeLineRects,
   type PointConverter,
-} from "../../pdf/coords";
+} from "@deflink/viewer";
 import { resolveFontStyle } from "../../pdf/fontStyle";
-import type { PageText } from "../../pdf/pageText";
-import { textNodeRects } from "../../pdf/rangeRects";
+import type { PageText } from "@deflink/viewer";
+import { textNodeRects } from "@deflink/viewer";
 import { selectedRawRange, styledRuns } from "./selectionRuns";
 
 export interface CapturedSelection {

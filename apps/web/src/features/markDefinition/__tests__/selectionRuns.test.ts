@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Segment } from "../../../pdf/pageText";
+import type { Segment } from "@deflink/viewer";
 import { styledRuns } from "../selectionRuns";
 
 // Fake text nodes: styledRuns never touches them.

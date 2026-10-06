@@ -271,3 +271,23 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   overlay layers are `aria-hidden`, since the text layer carries the content. The panel resize
   handle has `aria-valuemin/max`, and custom controls (link, icon, sort, chip buttons) get explicit
   focus rings; the resize handle no longer suppresses its outline.
+
+## M9 (Zotero plugin, targeting Zotero 8.0–9.0.*)
+
+- **Target version.** The user runs Zotero 9.0. Zotero 9 has no major developer-facing changes from
+  8 (Firefox 140, ES modules, no Bluebird), so the manifest allows `8.0` to `9.0.*`. APIs were
+  checked against the public docs and the zotero/zotero and zotero/reader sources (reading the
+  local install was not permitted): `Zotero.Reader.registerEventListener(type, handler, pluginID)`
+  with `renderTextSelectionPopup` (`{ reader, doc, params, append }`, where `params.annotation`
+  has `text`, `pageLabel`, `sortIndex` and `position { pageIndex, rects }`) and `renderToolbar`;
+  `ReaderInstance.navigate(location)`, `_waitForReader()`, `_item`, `type`;
+  `_internalReader._primaryView._iframeWindow.PDFViewerApplication` (`pdfViewer.getPageView(i)` →
+  `div`, `pdfPage`; `eventBus` `textlayerrendered`); `Zotero.Annotations.saveFromJSON`.
+- **New package `@deflink/viewer`** (not in §3): the PDF.js-version-independent helpers both apps
+  need (coordinates, range rects, `joinItems` / `rawOffsetToDom`, occurrence computing, filtering and
+  hit testing), moved out of `apps/web` with their tests. It needs the DOM, so it can't live in
+  `core`, which stays unchanged. These helpers now take the document from the nodes they are given
+  instead of the global `document`, so they work inside the Zotero reader's iframes.
+- **`buildPageTextFromDom`** builds PageText from the text layer's spans and their client rects
+  (§5.1's original approach). Zotero bundles its own PDF.js, whose `TextLayer` and its `textDivs`
+  are private, so the web app's item-index alignment isn't available there.

@@ -1,6 +1,7 @@
 import { GlobalWorkerOptions, getDocument, type PDFDocumentProxy } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { itemGeometry, joinItems, pageHasText, textItems } from "./pageText";
+import { joinItems, pageHasText } from "@deflink/viewer";
+import { itemGeometry, textItems } from "./pageText";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 

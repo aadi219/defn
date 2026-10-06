@@ -1,5 +1,5 @@
-import { clientRectToPage } from "../../pdf/coords";
-import type { PageText } from "../../pdf/pageText";
+import { clientRectToPage } from "@deflink/viewer";
+import type { PageText } from "@deflink/viewer";
 
 const LAYER_CLASS = "debug-host";
 

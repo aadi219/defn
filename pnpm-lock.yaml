@@ -211,6 +211,9 @@ importers:
       '@deflink/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@deflink/viewer':
+        specifier: workspace:*
+        version: link:../../packages/viewer
       '@floating-ui/react':
         specifier: ^0.27.20
         version: 0.27.20(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -247,6 +250,16 @@ importers:
         version: 5.0.3(@types/node@26.6.3)(@vitest/coverage-v8@5.0.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15))
 
   packages/core:
+    devDependencies:
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/node@26.6.3)(@vitest/coverage-v8@5.0.3)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(tsx@4.23.15))
+
+  packages/viewer:
+    dependencies:
+      '@deflink/core':
+        specifier: workspace:*
+        version: link:../core
     devDependencies:
       vitest:
         specifier: ^5.0.3

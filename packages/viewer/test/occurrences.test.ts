@@ -7,7 +7,7 @@ import {
   rectsIntersect,
   type FilterContext,
   type Occurrence,
-} from "../occurrences";
+} from "../src/occurrences";
 
 const r = (left: number, top: number, width: number, height: number) => ({
   left,

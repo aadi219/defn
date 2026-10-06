@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { Occurrence } from "./occurrences";
+import type { Occurrence } from "@deflink/viewer";
 
 /** Dotted underline under every rect of every linked occurrence on a page (PLAN.md §7.2). */
 export const OccurrenceUnderlines = memo(function OccurrenceUnderlines(props: {

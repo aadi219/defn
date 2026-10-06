@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@deflink/core": "workspace:*",
+    "@deflink/viewer": "workspace:*",
     "@floating-ui/react": "^0.27.20",
     "dexie": "^4.4.6",
     "pdfjs-dist": "6.3.289",

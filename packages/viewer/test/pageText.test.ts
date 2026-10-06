@@ -5,7 +5,7 @@ import {
   rawOffsetToDom,
   type ItemGeometry,
   type Segment,
-} from "../pageText";
+} from "../src/pageText";
 
 /** An item on baseline y, starting at x, 10 units tall, 5 units per character. */
 function item(str: string, x: number, y: number, hasEOL = false): ItemGeometry {

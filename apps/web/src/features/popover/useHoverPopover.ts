@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import type { PageCssRect } from "../../pdf/coords";
-import { hitTest, type Occurrence } from "../linking/occurrences";
+import type { PageCssRect } from "@deflink/viewer";
+import { hitTest, type Occurrence } from "@deflink/viewer";
 
 const OPEN_DELAY_MS = 300;
 const CLOSE_DELAY_MS = 200;

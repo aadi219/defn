@@ -11,7 +11,7 @@ import {
 } from "react";
 import type { PageViewport, PDFDocumentProxy } from "pdfjs-dist";
 import type { PdfRect } from "@deflink/core";
-import { pdfRectToCss } from "./coords";
+import { pdfRectToCss } from "@deflink/viewer";
 import {
   anchorAt,
   clampScale,

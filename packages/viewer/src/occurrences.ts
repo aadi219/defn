@@ -1,5 +1,5 @@
 import type { Definition, Suppression, Term } from "@deflink/core";
-import type { PageCssRect } from "../../pdf/coords";
+import type { PageCssRect } from "./coords";
 
 /** A linked occurrence of a term on a rendered page. */
 export interface Occurrence {

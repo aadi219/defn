@@ -6,7 +6,7 @@ import {
   pdfRectToCss,
   unionPdfRects,
   type PointConverter,
-} from "../coords";
+} from "../src/coords";
 
 /** Unrotated viewport of a 600x800 pt page at scale 2: x' = 2x, y' = 2(800 - y). */
 const viewport: PointConverter = {
