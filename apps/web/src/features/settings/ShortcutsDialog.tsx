@@ -5,6 +5,12 @@ const SHORTCUTS: { group: string; keys: { keys: string[]; action: string }[] }[]
     group: "Definitions",
     keys: [
       { keys: ["D"], action: "Mark the selected text as a definition" },
+      {
+        keys: ["F7"],
+        action: "Browser caret browsing: select text with the keyboard, then press D",
+      },
+      { keys: ["]", "["], action: "Next / previous linked term (opens its popover)" },
+      { keys: ["Tab"], action: "Move through the open popover’s buttons" },
       { keys: ["P"], action: "Pin the open popover’s definition" },
       { keys: ["G"], action: "Go to the open popover’s definition" },
       { keys: ["Esc"], action: "Close the popover, menu or dialog" },

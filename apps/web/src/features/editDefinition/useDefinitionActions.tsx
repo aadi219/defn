@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useId, useRef, useState, type ReactNode } from "react";
 import type { Definition, Term } from "@deflink/core";
 import { useCropUrl } from "../popover/useCropUrl";
 import {
@@ -13,6 +13,7 @@ import {
   TermCollisionError,
   updateDefinition,
 } from "../../store/repo";
+import { useModalDialog } from "../../util/useModalDialog";
 
 interface Options {
   terms: readonly Term[];
@@ -186,10 +187,7 @@ function DeleteDefinitionDialog(props: {
   const [deleteTerm, setDeleteTerm] = useState(true);
   const label = state.term?.label ?? "this term";
 
-  useEffect(() => {
-    const el = dialog.current;
-    if (el && !el.open) el.showModal();
-  }, []);
+  useModalDialog(dialog);
 
   return (
     <dialog

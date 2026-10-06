@@ -9,6 +9,7 @@ import {
   type Scope,
   type Term,
 } from "@deflink/core";
+import { useModalDialog } from "../../util/useModalDialog";
 
 export interface MarkDefinitionValues {
   term: string;
@@ -79,9 +80,8 @@ export function MarkDefinitionDialog(props: Props) {
   const [caseSensitive, setCaseSensitive] = useState(editTerm?.caseSensitive ?? false);
   const [submitted, setSubmitted] = useState(false);
 
+  useModalDialog(dialog);
   useEffect(() => {
-    const el = dialog.current;
-    if (el && !el.open) el.showModal();
     termInput.current?.focus();
     termInput.current?.select();
   }, []);

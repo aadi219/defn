@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
+import { useModalDialog } from "../util/useModalDialog";
 
 /** A native modal dialog that opens on mount; Esc calls `onCancel` unless `busy`. */
 export function Modal(props: {
@@ -11,10 +12,7 @@ export function Modal(props: {
   const { title, className, busy, onCancel, children } = props;
   const dialog = useRef<HTMLDialogElement>(null);
   const id = useId();
-  useEffect(() => {
-    const el = dialog.current;
-    if (el && !el.open) el.showModal();
-  }, []);
+  useModalDialog(dialog);
   return (
     <dialog
       ref={dialog}

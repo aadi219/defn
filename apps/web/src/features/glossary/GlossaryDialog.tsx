@@ -13,6 +13,7 @@ import {
 } from "../../store/repo";
 import { buildRows, filterRows, sortRows, type SortKey } from "./glossaryRows";
 import { ConfirmDialog, MergeDialog, TermEditDialog } from "./TermDialogs";
+import { useModalDialog } from "../../util/useModalDialog";
 
 interface Data {
   terms: Term[];
@@ -67,9 +68,8 @@ export function GlossaryDialog(props: { currentDocId?: string; onClose(): void }
     setSelected((s) => new Set([...s].filter((x) => ids.has(x))));
   }, []);
 
+  useModalDialog(dialog);
   useEffect(() => {
-    const el = dialog.current;
-    if (el && !el.open) el.showModal();
     let cancelled = false;
     loadData()
       .then((next) => {

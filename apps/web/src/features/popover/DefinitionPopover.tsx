@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useLayoutEffect, useState, type PointerEvent } from "react";
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import {
   autoUpdate,
   flip,
@@ -41,6 +41,8 @@ interface Props {
   term: Term;
   docId: string;
   anchor: PopoverAnchor;
+  /** Move focus into the popover (opened by click or keyboard), and back when it closes. */
+  takeFocus?: boolean;
   onGoToSource(definition: Definition): void;
   /** Pins the term's best definition (decision 6). */
   onPin(): void;
@@ -72,6 +74,7 @@ export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function Defi
     term,
     docId,
     anchor,
+    takeFocus = false,
     onGoToSource,
     onPin,
     onEdit,
@@ -125,7 +128,22 @@ export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function Defi
     });
   }, [anchor, refs]);
 
-  const mergedRef = useMergeRefs([refs.setFloating, ref]);
+  const container = useRef<HTMLDivElement>(null);
+  const mergedRef = useMergeRefs([refs.setFloating, ref, container]);
+
+  // Focus follows a click/keyboard-opened popover; on close it returns to where it was, unless the
+  // user has already moved it elsewhere.
+  useEffect(() => {
+    if (!takeFocus) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const el = container.current;
+    el?.focus({ preventScroll: true });
+    return () => {
+      const active = document.activeElement;
+      const focusLeft = active && active !== document.body && !el?.contains(active);
+      if (!focusLeft && previous?.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, [takeFocus, anchor]);
   const data = loaded?.termId === term.id ? loaded : null;
   const primary = data?.current[0] ?? data?.other[0];
 
@@ -135,6 +153,7 @@ export const DefinitionPopover = forwardRef<HTMLDivElement, Props>(function Defi
       className="definition-popover"
       role="dialog"
       aria-label={`Definition of ${term.label}`}
+      tabIndex={-1}
       style={{ ...floatingStyles, maxWidth: MAX_WIDTH }}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}

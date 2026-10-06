@@ -14,6 +14,8 @@ export interface PopoverTarget {
   pageEl: HTMLElement;
   occurrence: Occurrence;
   rect: PageCssRect;
+  /** How it was opened; click- and keyboard-opened popovers take focus. */
+  via: "hover" | "click" | "keyboard";
 }
 
 const keyOf = (t: { page: number; occurrence: Occurrence }) =>
@@ -61,7 +63,12 @@ export function useHoverPopover(
     const container = containerRef.current;
     if (!container) return;
 
-    const hitAt = (clientX: number, clientY: number, el: Element | null): PopoverTarget | null => {
+    const hitAt = (
+      clientX: number,
+      clientY: number,
+      el: Element | null,
+      via: PopoverTarget["via"],
+    ): PopoverTarget | null => {
       const pageEl = el?.closest<HTMLElement>(".page");
       if (!pageEl) return null;
       const page = Number(pageEl.dataset.pageNumber);
@@ -69,7 +76,7 @@ export function useHoverPopover(
       if (!occurrences?.length) return null;
       const box = pageEl.getBoundingClientRect();
       const hit = hitTest(occurrences, clientX - box.left, clientY - box.top);
-      return hit ? { page, pageEl, ...hit } : null;
+      return hit ? { page, pageEl, ...hit, via } : null;
     };
 
     const scheduleClose = () => {
@@ -93,7 +100,7 @@ export function useHoverPopover(
         return;
       }
       // Ignore hovering while a button is held (e.g. drag-selecting text).
-      const hit = e.buttons === 0 ? hitAt(e.clientX, e.clientY, el) : null;
+      const hit = e.buttons === 0 ? hitAt(e.clientX, e.clientY, el, "hover") : null;
       container.classList.toggle(OVER_CLASS, hit !== null);
       const current = targetRef.current;
       if (hit && current && keyOf(hit) === keyOf(current)) {
@@ -135,7 +142,7 @@ export function useHoverPopover(
         : false;
       const selection = window.getSelection();
       if (moved || (selection && !selection.isCollapsed)) return;
-      const hit = hitAt(e.clientX, e.clientY, el);
+      const hit = hitAt(e.clientX, e.clientY, el, "click");
       cancelOpen();
       cancelClose();
       show(hit);
@@ -166,5 +173,15 @@ export function useHoverPopover(
     };
   }, [containerRef, show, close]);
 
-  return { target, close };
+  /** Opens the popover on a given occurrence, e.g. from keyboard navigation. */
+  const open = useCallback(
+    (next: PopoverTarget) => {
+      cancelOpen();
+      cancelClose();
+      show(next);
+    },
+    [show],
+  );
+
+  return { target, open, close };
 }

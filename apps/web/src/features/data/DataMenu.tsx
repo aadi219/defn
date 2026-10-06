@@ -9,6 +9,8 @@ import {
 import { notifyStoreChanged } from "../../state/store";
 import { exportStore, importStore } from "../../store/repo";
 import { useToast } from "../toast/toast";
+import { onMenuKeyDown } from "../../util/menuKeys";
+import { useModalDialog } from "../../util/useModalDialog";
 
 /** `deflink-YYYY-MM-DD.json` in local time (PLAN.md §8). */
 export function exportFileName(date: Date): string {
@@ -103,7 +105,12 @@ export function DataMenu() {
         Data ▾
       </button>
       {open && (
-        <ul className="context-menu dropdown" role="menu">
+        <ul
+          className="context-menu dropdown"
+          role="menu"
+          aria-label="Data"
+          onKeyDown={onMenuKeyDown}
+        >
           <li role="none">
             <button type="button" role="menuitem" autoFocus onClick={() => void doExport()}>
               Export all…
@@ -163,10 +170,7 @@ function ImportDialog(props: { name: string; file: ExportFileV1; onClose(): void
     | { status: "error"; message: string }
   >({ status: "idle" });
 
-  useEffect(() => {
-    const el = dialog.current;
-    if (el && !el.open) el.showModal();
-  }, []);
+  useModalDialog(dialog);
 
   const run = async () => {
     setState({ status: "importing" });

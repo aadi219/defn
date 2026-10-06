@@ -124,11 +124,20 @@ export const PdfPage = memo(function PdfPage(props: Props) {
   } as CSSProperties;
 
   return (
-    <div className="page" data-page-number={pageNumber} style={style}>
-      <div className="canvas-host" ref={canvasHost} />
-      <div className="overlay-layer">{overlay}</div>
+    <div
+      className="page"
+      data-page-number={pageNumber}
+      style={style}
+      role="group"
+      aria-label={`Page ${pageNumber}`}
+    >
+      <div className="canvas-host" ref={canvasHost} aria-hidden="true" />
+      {/* Underlines and regions are visual only; popovers are reached with ] / [. */}
+      <div className="overlay-layer" aria-hidden="true">
+        {overlay}
+      </div>
       {/* Filled imperatively by dev tools; React never renders into it. */}
-      <div className="debug-host" />
+      <div className="debug-host" aria-hidden="true" />
       <div className="text-host" ref={textHost} />
     </div>
   );

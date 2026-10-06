@@ -258,3 +258,16 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   refers to it; otherwise `lastOpenedAt` is set to 0, which hides it from the list but keeps source
   titles for its definitions. File handles are not exported.
 - **Dark mode is deferred** at the user's request (not needed for now).
+- **Accessibility pass.** `useModalDialog` opens every modal `<dialog>` and returns focus to the
+  previously focused element when it unmounts (removing an open dialog would otherwise leave focus
+  on `<body>`). Popovers opened by click or keyboard take focus (Tab reaches Pin / Go to source /
+  Edit / Delete; Esc closes and restores focus); hover-opened popovers never steal it.
+- **Keyboard access to linked terms:** `]` / `[` step through occurrences on the rendered pages in
+  reading order (wrapping; starting from the current page when no popover is open), scroll them
+  into view and open their popover. Ordering and stepping are pure and tested (`occurrenceNav.ts`).
+  Marking a definition by keyboard relies on the browser's caret browsing (F7), which works on the
+  PDF.js text layer; the shortcut list says so.
+- Menus (`role="menu"`) support ↑/↓/Home/End. Pages are labelled groups ("Page n"); the canvas and
+  overlay layers are `aria-hidden`, since the text layer carries the content. The panel resize
+  handle has `aria-valuemin/max`, and custom controls (link, icon, sort, chip buttons) get explicit
+  focus rings; the resize handle no longer suppresses its outline.

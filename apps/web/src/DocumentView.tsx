@@ -24,6 +24,8 @@ import {
   type CaptureResult,
 } from "./features/markDefinition/captureSelection";
 import { OccurrenceUnderlines } from "./features/linking/OccurrenceUnderlines";
+import { orderOccurrences, stepOccurrence } from "./features/linking/occurrenceNav";
+import type { Occurrence } from "./features/linking/occurrences";
 import { useLinking } from "./features/linking/useLinking";
 import { useDefinitionActions } from "./features/editDefinition/useDefinitionActions";
 import { DefinitionRegions } from "./features/markDefinition/DefinitionRegions";
@@ -39,7 +41,7 @@ import { StackPanel } from "./features/stack/StackPanel";
 import { move, pin, unpin } from "./features/stack/stackState";
 import { usePanelPrefs, useStack } from "./features/stack/useStack";
 import { useToast } from "./features/toast/toast";
-import { unionPdfRects } from "./pdf/coords";
+import { cssRectToPdf, unionPdfRects } from "./pdf/coords";
 import { renderCrop, type CropImage } from "./pdf/crop";
 import type { LoadedPdf } from "./pdf/loadDocument";
 import { PdfViewer, type PdfViewerHandle } from "./pdf/PdfViewer";
@@ -53,6 +55,7 @@ import {
   TermCollisionError,
 } from "./store/repo";
 import { shouldIgnoreShortcut } from "./util/keys";
+import { onMenuKeyDown } from "./util/menuKeys";
 
 interface Draft {
   selection: CapturedSelection;
@@ -113,7 +116,49 @@ export function DocumentView({ doc, toolbarStart }: Props) {
     },
     [occurrencesByPage],
   );
-  const { target: popover, close: closePopover } = useHoverPopover(root, getOccurrences);
+  const {
+    target: popover,
+    open: openPopover,
+    close: closePopover,
+  } = useHoverPopover(root, getOccurrences);
+
+  // ] / [ step through linked occurrences on rendered pages and open their popovers, so terms
+  // can be looked up without a pointer.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (shouldIgnoreShortcut(e) || (e.key !== "]" && e.key !== "[")) return;
+      e.preventDefault();
+      const byPage = [...occurrencesByPage.keys()].map((page): [number, readonly Occurrence[]] => [
+        page,
+        getOccurrences(page) ?? [],
+      ]);
+      const currentPage = viewer.current?.getCurrentPage() ?? 1;
+      const next = stepOccurrence(
+        orderOccurrences(byPage),
+        popover,
+        currentPage,
+        e.key === "]" ? 1 : -1,
+      );
+      if (!next) {
+        toast("No linked terms on the pages around here.");
+        return;
+      }
+      const pageEl = root.current?.querySelector<HTMLElement>(
+        `.page[data-page-number="${next.page}"]`,
+      );
+      const viewport = viewer.current?.getViewport(next.page);
+      const scroller = viewer.current?.getScroller();
+      if (!pageEl || !viewport || !scroller) return;
+      const view = scroller.getBoundingClientRect();
+      const top = pageEl.getBoundingClientRect().top + next.rect.top;
+      if (top < view.top || top + next.rect.height > view.bottom) {
+        viewer.current?.scrollToPdfRect(next.page, cssRectToPdf(next.rect, viewport));
+      }
+      openPopover({ ...next, pageEl, via: "keyboard" });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [occurrencesByPage, getOccurrences, popover, openPopover, toast]);
   const popoverTerm = popover ? termsById.get(popover.occurrence.termId) : undefined;
   const [draft, setDraft] = useState<Draft | null>(null);
   const definitionActions = useDefinitionActions({ terms, reload, toast });
@@ -460,6 +505,7 @@ export function DocumentView({ doc, toolbarStart }: Props) {
           term={popoverTerm}
           docId={doc.docId}
           anchor={popover}
+          takeFocus={popover.via !== "hover"}
           onGoToSource={goToSource}
           onPin={pinPopoverTerm}
           onEdit={(d) => {
@@ -474,7 +520,13 @@ export function DocumentView({ doc, toolbarStart }: Props) {
         />
       )}
       {menu && (
-        <ul className="context-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
+        <ul
+          className="context-menu"
+          role="menu"
+          aria-label="Definition actions"
+          style={{ left: menu.x, top: menu.y }}
+          onKeyDown={onMenuKeyDown}
+        >
           {menu.capture && (
             <li role="none">
               <button

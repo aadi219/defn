@@ -494,7 +494,9 @@ fieldset.field {
 .stack-resize:hover,
 .stack-resize:focus-visible {
   background: rgb(47 91 211 / 0.35);
-  outline: none;
+}
+.stack-resize:focus-visible {
+  outline-offset: 0;
 }
 .stack-header {
   display: flex;
@@ -878,4 +880,18 @@ button.danger {
 .recent-meta {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+/* Focus rings: keep them visible on custom controls and inside scroll containers. */
+.link-button:focus-visible,
+.icon-button:focus-visible,
+.sort-button:focus-visible,
+.term-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+.definition-popover:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
 }

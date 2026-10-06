@@ -5,7 +5,7 @@ import { DefinitionActions, KIND_LABELS } from "../popover/DefinitionPopover";
 import { useCropUrl } from "../popover/useCropUrl";
 import { nestedTermIds } from "./nestedTerms";
 import type { StackState } from "./stackState";
-import { clampPanelWidth } from "./useStack";
+import { clampPanelWidth, PANEL_MAX_WIDTH, PANEL_MIN_WIDTH } from "./useStack";
 
 const RESIZE_KEY_STEP = 16;
 
@@ -93,6 +93,8 @@ export function StackPanel(props: Props) {
         aria-orientation="vertical"
         aria-label="Resize pinned definitions panel"
         aria-valuenow={width}
+        aria-valuemin={PANEL_MIN_WIDTH}
+        aria-valuemax={PANEL_MAX_WIDTH}
         tabIndex={0}
         {...resize}
       />

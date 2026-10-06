@@ -41,6 +41,10 @@ export interface PdfViewerHandle {
   getViewport(pageNumber: number): PageViewport | undefined;
   /** Scrolls so that a PDF-space rect on a page is near the top of the view. */
   scrollToPdfRect(pageNumber: number, rect: PdfRect): void;
+  /** The page at the centre of the viewport. */
+  getCurrentPage(): number;
+  /** The scroll container, e.g. to check whether something is in view. */
+  getScroller(): HTMLElement | null;
 }
 
 interface Props {
@@ -150,8 +154,10 @@ export const PdfViewer = forwardRef<PdfViewerHandle, Props>(function PdfViewer(
         const css = pdfRectToCss(rect, viewport);
         el.scrollTop = Math.max(0, top + css.top - SCROLL_TO_RECT_MARGIN);
       },
+      getCurrentPage: () => centerIndex + 1,
+      getScroller: () => scroller.current,
     }),
-    [scrollToPage, viewports, layout],
+    [scrollToPage, viewports, layout, centerIndex],
   );
 
   const zoomBy = useCallback(
