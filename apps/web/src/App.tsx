@@ -2,10 +2,14 @@ import { useCallback, useEffect, useRef, useState, type DragEvent } from "react"
 import { DocumentView } from "./DocumentView";
 import { DataMenu } from "./features/data/DataMenu";
 import { GlossaryDialog } from "./features/glossary/GlossaryDialog";
+import { SettingsDialog } from "./features/settings/SettingsDialog";
+import { ShortcutsDialog } from "./features/settings/ShortcutsDialog";
 import { ToastProvider } from "./features/toast/toast";
 import { detectTextLayer, isPdfFile, loadPdf, type LoadedPdf } from "./pdf/loadDocument";
+import { SettingsProvider, useSettings } from "./state/settings";
 import { StoreProvider } from "./state/store";
 import { upsertDocument } from "./store/repo";
+import { shouldIgnoreShortcut } from "./util/keys";
 
 type LoadState =
   | { status: "idle" }
@@ -14,9 +18,11 @@ type LoadState =
 
 export function App() {
   return (
-    <ToastProvider>
-      <Shell />
-    </ToastProvider>
+    <SettingsProvider>
+      <ToastProvider>
+        <Shell />
+      </ToastProvider>
+    </SettingsProvider>
   );
 }
 
@@ -25,7 +31,24 @@ function Shell() {
   const [load, setLoad] = useState<LoadState>({ status: "idle" });
   const [dragging, setDragging] = useState(false);
   const [noTextLayer, setNoTextLayer] = useState(false);
-  const [glossaryOpen, setGlossaryOpen] = useState(false);
+  const [dialog, setDialog] = useState<"glossary" | "settings" | "shortcuts" | null>(null);
+  const { settings, update } = useSettings();
+
+  // App-wide shortcuts: ? shows the shortcut list, U toggles underlines.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (shouldIgnoreShortcut(e)) return;
+      if (e.key === "?") {
+        e.preventDefault();
+        setDialog("shortcuts");
+      } else if (e.key === "u" || e.key === "U") {
+        e.preventDefault();
+        update({ showUnderlines: !settings.showUnderlines });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [settings.showUnderlines, update]);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const openFile = useCallback(async (file: File) => {
@@ -72,10 +95,31 @@ function Shell() {
       Open PDF…
     </button>
   );
-  const glossaryButton = (
-    <button type="button" onClick={() => setGlossaryOpen(true)}>
-      Glossary
-    </button>
+  const appButtons = (
+    <>
+      <button type="button" onClick={() => setDialog("glossary")}>
+        Glossary
+      </button>
+      <DataMenu />
+      <button
+        type="button"
+        className="icon-button"
+        onClick={() => setDialog("settings")}
+        aria-label="Settings"
+        title="Settings"
+      >
+        ⚙
+      </button>
+      <button
+        type="button"
+        className="icon-button"
+        onClick={() => setDialog("shortcuts")}
+        aria-label="Keyboard shortcuts"
+        title="Keyboard shortcuts (?)"
+      >
+        ?
+      </button>
+    </>
   );
 
   return (
@@ -124,8 +168,7 @@ function Shell() {
             toolbarStart={
               <>
                 {openButton}
-                {glossaryButton}
-                <DataMenu />
+                {appButtons}
                 <span className="doc-title" title={doc.fileName}>
                   {doc.title}
                 </span>
@@ -139,8 +182,7 @@ function Shell() {
           <p>Open a PDF to start marking definitions.</p>
           <div className="start-actions">
             {openButton}
-            {glossaryButton}
-            <DataMenu />
+            {appButtons}
           </div>
           <p className="hint">…or drop a PDF anywhere on this window.</p>
         </main>
@@ -151,9 +193,11 @@ function Shell() {
         </div>
       )}
       {dragging && <div className="drop-overlay">Drop PDF to open</div>}
-      {glossaryOpen && (
-        <GlossaryDialog currentDocId={doc?.docId} onClose={() => setGlossaryOpen(false)} />
+      {dialog === "glossary" && (
+        <GlossaryDialog currentDocId={doc?.docId} onClose={() => setDialog(null)} />
       )}
+      {dialog === "settings" && <SettingsDialog onClose={() => setDialog(null)} />}
+      {dialog === "shortcuts" && <ShortcutsDialog onClose={() => setDialog(null)} />}
     </div>
   );
 }

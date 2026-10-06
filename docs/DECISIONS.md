@@ -233,3 +233,16 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
 - **Messages show inside the glossary**, not as toasts: toasts render beneath modal dialogs, which
   sit in the browser's top layer. Every change fires `deflink:store-changed`, so underlines and
   pinned cards behind the glossary update at once.
+
+## M8
+
+- **Settings** (`state/settings.tsx`) are app-wide, in localStorage (`deflink:settings`), validated
+  on read: inflection, "only link after first definition", show underlines, underline colour (hex
+  only, since it goes into a CSS variable). The provider sits above every document.
+- **`U` hides underlines but keeps hover/click popovers working**, so you can read without visual
+  clutter and still look terms up.
+- **Settings dialog** also shows the storage used (`navigator.storage.estimate()`, §12 risk table).
+  "Re-compress crops" from §12 is not implemented; the crops are small at the current scale.
+- **`?`** opens a keyboard shortcut list. Settings (⚙) and shortcuts (?) also have toolbar buttons,
+  next to Glossary and Data, both in a document and on the start screen. A shared `Modal`
+  component (native `<dialog>`) now backs the glossary sub-dialogs and these two.

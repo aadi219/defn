@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import {
   findCollision,
   isValidTermLabel,
@@ -8,39 +8,9 @@ import {
   type Scope,
   type Term,
 } from "@deflink/core";
+import { Modal } from "../../components/Modal";
 import type { TermFields } from "../../store/repo";
 import { scopeLabel } from "./glossaryRows";
-
-/** A native modal dialog that opens on mount; Esc calls `onCancel` unless `busy`. */
-function Modal(props: {
-  title: string;
-  className?: string;
-  busy?: boolean;
-  onCancel(): void;
-  children: ReactNode;
-}) {
-  const { title, className, busy, onCancel, children } = props;
-  const dialog = useRef<HTMLDialogElement>(null);
-  const id = useId();
-  useEffect(() => {
-    const el = dialog.current;
-    if (el && !el.open) el.showModal();
-  }, []);
-  return (
-    <dialog
-      ref={dialog}
-      className={`mark-dialog ${className ?? ""}`}
-      aria-labelledby={`${id}-title`}
-      onCancel={(e) => {
-        e.preventDefault();
-        if (!busy) onCancel();
-      }}
-    >
-      <h2 id={`${id}-title`}>{title}</h2>
-      {children}
-    </dialog>
-  );
-}
 
 export function ConfirmDialog(props: {
   title: string;

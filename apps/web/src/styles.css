@@ -794,3 +794,45 @@ button.danger {
 .merge-preview p {
   margin: 0.2rem 0;
 }
+
+/* Settings and shortcuts */
+.settings-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem 0.25rem;
+  margin: 0 0 0.75rem;
+}
+.settings-group legend {
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+.settings-group .checkbox {
+  margin-bottom: 0.5rem;
+}
+.settings-group input[type="color"] {
+  width: 2.2rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: none;
+}
+.shortcuts-dialog h3 {
+  font-size: 0.95rem;
+  margin: 0.75rem 0 0.3rem;
+}
+.shortcut-list {
+  margin: 0;
+}
+.shortcut-list > div {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.75rem;
+  padding: 0.2rem 0;
+}
+.shortcut-list dt kbd {
+  margin: 0 0.3rem 0 0;
+}
+.shortcut-list dd {
+  margin: 0;
+}

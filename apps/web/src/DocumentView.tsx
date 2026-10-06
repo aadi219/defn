@@ -1,4 +1,13 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import type { PageViewport } from "pdfjs-dist";
 import {
   bestDefinition,
@@ -35,6 +44,7 @@ import { renderCrop, type CropImage } from "./pdf/crop";
 import type { LoadedPdf } from "./pdf/loadDocument";
 import { PdfViewer, type PdfViewerHandle } from "./pdf/PdfViewer";
 import { usePageTexts, type PageTextEntry } from "./pdf/usePageTexts";
+import { useSettings } from "./state/settings";
 import { useStore } from "./state/store";
 import {
   addSuppression,
@@ -64,6 +74,8 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const toast = useToast();
   const { terms, definitions, suppressions, reload } = useStore();
+  const { settings } = useSettings();
+  const { showUnderlines } = settings;
   const [debugSegments, setDebugSegments] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -75,7 +87,17 @@ export function DocumentView({ doc, toolbarStart }: Props) {
     byPage: occurrencesByPage,
     linkPage,
     matcher,
-  } = useLinking({ docId: doc.docId, terms, definitions, suppressions }, liveEntries);
+  } = useLinking(
+    {
+      docId: doc.docId,
+      terms,
+      definitions,
+      suppressions,
+      inflection: settings.inflection,
+      onlyAfterFirstDefinition: settings.onlyAfterFirstDefinition,
+    },
+    liveEntries,
+  );
   useEffect(() => {
     linkPageRef.current = linkPage;
   }, [linkPage]);
@@ -119,13 +141,13 @@ export function DocumentView({ doc, toolbarStart }: Props) {
       return (
         <>
           {defs && <DefinitionRegions definitions={defs} viewport={viewport} flashId={flash} />}
-          {linked && linked.scale === viewport.scale && (
+          {showUnderlines && linked && linked.scale === viewport.scale && (
             <OccurrenceUnderlines occurrences={linked.occurrences} />
           )}
         </>
       );
     },
-    [definitionsByPage, occurrencesByPage, flash],
+    [definitionsByPage, occurrencesByPage, flash, showUnderlines],
   );
 
   const goToSource = useCallback(
@@ -374,7 +396,12 @@ export function DocumentView({ doc, toolbarStart }: Props) {
   }, [menu]);
 
   return (
-    <div className="document-view" ref={root} onContextMenu={onContextMenu}>
+    <div
+      className="document-view"
+      ref={root}
+      onContextMenu={onContextMenu}
+      style={{ "--link-underline": settings.underlineColor } as CSSProperties}
+    >
       <div className="document-body">
         <PdfViewer
           ref={viewer}
