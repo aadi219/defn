@@ -134,8 +134,13 @@ export class DefLinkStore {
     await this.saving;
   }
 
-  get terms(): readonly Term[] {
+  /** All terms; a new array after every change to them. */
+  get terms(): Term[] {
     return this.data.terms;
+  }
+
+  documentTitle(id: string): string | undefined {
+    return this.document(id)?.title;
   }
 
   definitionsForDoc(docId: string): Definition[] {
@@ -188,14 +193,15 @@ export class DefLinkStore {
     }
     const { png, ...crop } = input.crop;
     await this.io.writeBytes(this.cropPath(crop.id), png);
-    if ("create" in input.term) this.data.terms.push(input.term.create);
-    else {
-      const term = this.data.terms.find((t) => t.id === termId)!;
-      term.updatedAt = Date.now();
-    }
+    // Arrays are replaced, not mutated, so identity-keyed caches (core's matcher cache) see changes.
+    const now = Date.now();
+    this.data.terms =
+      "create" in input.term
+        ? [...this.data.terms, input.term.create]
+        : this.data.terms.map((t) => (t.id === termId ? { ...t, updatedAt: now } : t));
     const definition: Definition = { ...input.definition, termId, cropId: crop.id };
-    this.data.crops.push(crop);
-    this.data.definitions.push(definition);
+    this.data.crops = [...this.data.crops, crop];
+    this.data.definitions = [...this.data.definitions, definition];
     this.changed();
     return definition;
   }
@@ -206,7 +212,7 @@ export class DefLinkStore {
   }
 
   addSuppression(s: Suppression): void {
-    this.data.suppressions.push(s);
+    this.data.suppressions = [...this.data.suppressions, s];
     this.changed();
   }
 }

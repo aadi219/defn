@@ -2,6 +2,7 @@ import type { Definition, Term } from "@deflink/core";
 import { highlightJSON } from "./annotations";
 import { cropFromCanvas } from "./crop";
 import { h } from "./dom";
+import { ReaderLinker } from "./linker";
 import { openMarkDialog, type MarkTarget, type MarkValues } from "./markDialog";
 import { connect, toPdfRect } from "./readerBridge";
 import { DefLinkStore, TermCollisionError, type StoreIO } from "./store";
@@ -35,6 +36,8 @@ const geckoIO: StoreIO = {
 };
 
 let store: DefLinkStore | null = null;
+/** One linker per open PDF reader; `null` while connecting or when linking is unavailable. */
+const linkers = new Map<ZoteroReaderInstance, ReaderLinker | null>();
 
 const uuid = () => Services.uuid.generateUUID().toString().slice(1, -1);
 
@@ -142,6 +145,38 @@ async function mirrorAsHighlight(
   }
 }
 
+/** Starts linking a reader once its PDF view is ready; degrades to "mark only" (§12) if not. */
+async function attach(reader: ZoteroReaderInstance) {
+  if (!store || reader.type !== "pdf" || linkers.has(reader)) return;
+  for (const [r, linker] of linkers) {
+    if (linker && !linker.alive) {
+      linker.stop();
+      linkers.delete(r);
+    }
+  }
+  linkers.set(reader, null);
+  const bridge = await connect(reader);
+  if (!store || !linkers.has(reader)) return;
+  if (!bridge) {
+    log("linking unavailable for this reader (unexpected reader internals); marking still works");
+    return;
+  }
+  store.upsertDocument({
+    id: bridge.docId,
+    title: bridge.title,
+    fileName: bridge.fileName,
+    pageCount: bridge.pageCount(),
+    hasTextLayer: true,
+  });
+  const linker = new ReaderLinker(bridge, store);
+  linkers.set(reader, linker);
+  linker.start();
+}
+
+function onRenderToolbar(event: ZoteroReaderEvent) {
+  attach(event.reader).catch((err: unknown) => log("could not attach to reader", err));
+}
+
 function onTextSelectionPopup(event: ZoteroReaderEvent) {
   const { reader, doc, params, append } = event;
   if (reader.type !== "pdf") return;
@@ -167,6 +202,11 @@ export async function startup({ id }: { id: string; version: string; rootURI: st
   store = new DefLinkStore(geckoIO, PathUtils.join(Zotero.DataDirectory.dir, "deflink"));
   await store.load();
   Zotero.Reader.registerEventListener("renderTextSelectionPopup", onTextSelectionPopup, id);
+  // Fires as each reader renders its toolbar, i.e. for every newly opened reader.
+  Zotero.Reader.registerEventListener("renderToolbar", onRenderToolbar, id);
+  for (const reader of Zotero.Reader._readers ?? []) {
+    attach(reader).catch((err: unknown) => log("could not attach to reader", err));
+  }
   log("started");
 }
 
@@ -177,6 +217,9 @@ export function onMainWindowUnload() {}
 
 export async function shutdown() {
   Zotero.Reader.unregisterEventListener("renderTextSelectionPopup", onTextSelectionPopup);
+  Zotero.Reader.unregisterEventListener("renderToolbar", onRenderToolbar);
+  for (const linker of linkers.values()) linker?.stop();
+  linkers.clear();
   await store?.flush();
   store = null;
 }

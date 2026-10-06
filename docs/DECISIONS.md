@@ -317,3 +317,20 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   highlight with the reader's own position, page label and sort index, comment `term: <label>`,
   tag `deflink:<kind>`, and a colour by kind from Zotero's palette. Failures are logged and don't
   undo the definition.
+- **Linking in Zotero** (`src/linker.ts`, one `ReaderLinker` per PDF reader): readers are found at
+  startup (`Zotero.Reader._readers`) and as they open (`renderToolbar`), connected through the
+  bridge, and re-linked per page when its text layer changes (MutationObserver) or the store
+  changes. Pages are linked with the shared `@deflink/viewer` code on DOM-built page text; underlines
+  go in an overlay inside each `.page`, offset to its padding box, which is where the PDF.js
+  viewport has its origin. Hit testing is by page geometry in a capture-phase `pointermove`, since
+  Zotero's own layers sit on top. The plugin uses the default matcher options; there is no
+  settings UI in Zotero.
+- **Zotero popover** (`src/popover.ts`, plain DOM, positioned by the tested `placePopover`): term,
+  kind, label, every definition (this document's first) with its crop or text and source, plus
+  Go to source (`reader.navigate({ position })`) and Don't link here. Pin/stack, Edit/Delete and
+  the glossary stay web-only. In Zotero, definitions can be edited or removed by editing the store
+  file, and the mirrored highlights are ordinary annotations. Definition regions aren't tinted,
+  since the mirrored highlight already marks them.
+- **The Zotero store is separate from the web app's IndexedDB.** Its definitions are keyed by
+  attachment item key, the web app's by file hash. Sharing data through export/import would need a
+  docId mapping, so it is left for later.
