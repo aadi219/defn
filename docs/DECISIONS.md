@@ -342,3 +342,31 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   (`defn@defn.local`), its data directory and highlight tags (`defn:<kind>`). This was done before
   any release, so the old browser and Zotero data is not migrated. Import still accepts export files
   whose format is `"deflink"`. The repository folder keeps its old name.
+
+## Zotero plugin fixes (slow mark dialog, missing underlines)
+
+- **No DOM globals in shared code.** Zotero's plugin sandbox only provides a few web globals
+  (`atob`, `URL`, …; see `_loadScope` in zotero's `plugins.js`), so `NodeFilter` was undefined and
+  `textNodeRects` threw as soon as a page had a match, which meant no underlines. `@defn/viewer`
+  now uses the numeric constant, and `textNodeRects` starts its walk at the match's own text node
+  instead of walking the whole layer for each match.
+- **Text-layer observation follows how Zotero's PDF.js renders.** It builds a text layer off-DOM and
+  appends it whole, hides it while re-rendering a page (zoom, scrolling back) and removes our
+  overlay in `reset()`, and it moves `.endOfContent` on every selection change. The observer now
+  relinks a page when its text layer is attached, removed, shown or hidden, and ignores
+  `.endOfContent` moves, which had re-linked the page on every step of a text selection.
+- **Only linking-relevant store changes notify listeners.** `upsertDocument` (run when marking,
+  before the dialog opened) and `setAnnotationKey` still save but no longer re-link every page of
+  every open reader. Pages with a hidden text layer, or in a document with no terms in scope, are
+  skipped without measuring, and a page that fails to link is logged without affecting others.
+- **The PDF view window is unwaived before use (the main cause of both bugs).** Zotero creates
+  `_internalReader` through `wrappedJSObject` (`reader.js` in Zotero 9.0.6), so the view window
+  read through it is Xray-waived, and a waived object has no `wrappedJSObject`. `connect` therefore
+  never found `PDFViewerApplication` and polled until its 15 s timeout: the mark dialog, which
+  awaited it, opened 15 s late, and readers were never linked. `viewWindow` now applies
+  `Components.utils.unwaiveXrays`.
+- **The mark dialog opens synchronously.** The bridge (the linker's, or a new connection), the crop
+  and the document record are only needed on save. The modal keeps the selected page in view until
+  then. The time to open is written to Zotero's debug output.
+- **Tools → "Defn: Clear All Data…"** (for testing) deletes, after a confirmation, the store,
+  every crop and the highlights Defn mirrored, which are found by key in every library.

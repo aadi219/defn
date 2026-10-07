@@ -28,6 +28,8 @@ export interface StoreIO {
   writeBytes(path: string, bytes: Uint8Array): Promise<void>;
   readBytes(path: string): Promise<Uint8Array>;
   makeDirectory(path: string): Promise<void>;
+  /** Removes a file or directory tree; a missing path is fine. */
+  remove(path: string): Promise<void>;
   join(...parts: string[]): string;
 }
 
@@ -77,7 +79,8 @@ export interface NewDefinitionInput {
 
 /**
  * The plugin's store: everything in memory, persisted as one JSON file (debounced) plus one PNG per
- * crop. Listeners run after every change, e.g. to re-link open readers.
+ * crop. Listeners run after changes to terms, definitions or suppressions, i.e. whatever affects
+ * linking, to re-link open readers.
  */
 export class DefnStore {
   private data: StoreFile = emptyStore();
@@ -116,10 +119,11 @@ export class DefnStore {
     return () => this.listeners.delete(listener);
   }
 
-  private changed() {
+  /** Schedules a save; `notify` is false for changes that can't affect linking. */
+  private changed(notify = true) {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => void this.flush(), SAVE_DELAY_MS);
-    for (const listener of this.listeners) listener();
+    if (notify) for (const listener of this.listeners) listener();
   }
 
   /** Writes pending changes now (also called on shutdown). */
@@ -172,7 +176,7 @@ export class DefnStore {
     const at = this.data.documents.findIndex((d) => d.id === doc.id);
     if (at === -1) this.data.documents.push(record);
     else this.data.documents[at] = record;
-    this.changed();
+    this.changed(false);
   }
 
   /**
@@ -206,9 +210,27 @@ export class DefnStore {
     return definition;
   }
 
+  /** Keys of the Zotero highlights mirroring definitions. */
+  annotationKeys(): string[] {
+    return Object.values(this.data.annotationKeys);
+  }
+
+  /** Deletes everything: the data (saved immediately) and all crops. */
+  async clear(): Promise<void> {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = null;
+    await this.saving;
+    this.data = emptyStore();
+    const crops = this.io.join(this.dir, "crops");
+    await this.io.remove(crops);
+    await this.io.makeDirectory(crops);
+    this.changed();
+    await this.flush();
+  }
+
   setAnnotationKey(definitionId: string, key: string): void {
     this.data.annotationKeys[definitionId] = key;
-    this.changed();
+    this.changed(false);
   }
 
   addSuppression(s: Suppression): void {

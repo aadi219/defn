@@ -20,6 +20,9 @@ function fakeIO(initial?: unknown) {
     writeBytes: async (p, b) => void files.set(p, b),
     readBytes: async (p) => files.get(p) as Uint8Array,
     makeDirectory: async () => {},
+    remove: async (p) => {
+      for (const k of [...files.keys()]) if (k === p || k.startsWith(`${p}/`)) files.delete(k);
+    },
     join: (...parts) => parts.join("/"),
   };
   return { io, files };
@@ -88,6 +91,31 @@ describe("DefnStore", () => {
     expect(saved?.crops).toEqual([{ id: "crop-d1", width: 10, height: 5 }]);
   });
 
+  it("notifies listeners only of changes that affect linking, but saves all of them", async () => {
+    const { io, files } = fakeIO();
+    const store = new DefnStore(io, "/data");
+    await store.load();
+    const changes = vi.fn();
+    store.subscribe(changes);
+
+    store.upsertDocument({
+      id: "KEY1",
+      title: "Topology",
+      fileName: "topology.pdf",
+      pageCount: 3,
+      hasTextLayer: true,
+    });
+    store.setAnnotationKey("d1", "ABCD1234");
+    expect(changes).not.toHaveBeenCalled();
+    store.addSuppression({ id: "s1", termId: "t1", docId: "KEY1", page: 1, offset: 0 });
+    expect(changes).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(600);
+    const saved = parseStoreFile(files.get("/data/store.json"));
+    expect(saved?.documents.map((d) => d.title)).toEqual(["Topology"]);
+    expect(saved?.annotationKeys).toEqual({ d1: "ABCD1234" });
+  });
+
   it("reloads what it saved", async () => {
     const { io } = fakeIO();
     const a = new DefnStore(io, "/data");
@@ -111,6 +139,24 @@ describe("DefnStore", () => {
     await store.saveNewDefinition(input({ existingId: "t1" }, "d2"));
     expect(store.definitionsForTerm("t1")).toHaveLength(2);
     expect(store.terms).toHaveLength(1);
+  });
+
+  it("clears all data, crops included, and saves at once", async () => {
+    const { io, files } = fakeIO();
+    const store = new DefnStore(io, "/data");
+    await store.load();
+    await store.saveNewDefinition(input({ create: term("t1", "compact space") }));
+    store.setAnnotationKey("d1", "ABCD1234");
+    expect(store.annotationKeys()).toEqual(["ABCD1234"]);
+    const changes = vi.fn();
+    store.subscribe(changes);
+
+    await store.clear();
+    expect(changes).toHaveBeenCalledTimes(1);
+    expect(store.terms).toEqual([]);
+    expect(store.annotationKeys()).toEqual([]);
+    expect(files.has("/data/crops/crop-d1.png")).toBe(false);
+    expect(files.get("/data/store.json")).toEqual(emptyStore());
   });
 
   it("starts empty from an unreadable file without overwriting it", async () => {

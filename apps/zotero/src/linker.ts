@@ -1,4 +1,4 @@
-import { createMatcherCache } from "@defn/core";
+import { createMatcherCache, isInScope } from "@defn/core";
 import {
   buildPageTextFromDom,
   computeOccurrences,
@@ -50,7 +50,7 @@ export class ReaderLinker {
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private readonly bridge: ReaderBridge,
+    readonly bridge: ReaderBridge,
     private readonly store: DefnStore,
   ) {}
 
@@ -62,7 +62,7 @@ export class ReaderLinker {
   start() {
     const { viewDoc } = this.bridge;
     ensureStyle(viewDoc, "defn-linker-style", CSS);
-    this.disposers.push(this.bridge.observeTextLayers((page) => this.linkPage(page)));
+    this.disposers.push(this.bridge.observeTextLayers((page) => this.safelyLinkPage(page)));
     this.disposers.push(this.store.subscribe(() => this.relinkAll()));
     this.listenForPointer();
   }
@@ -78,18 +78,37 @@ export class ReaderLinker {
     this.closePopover();
     for (const el of this.bridge.viewDoc.querySelectorAll<HTMLElement>(".page")) {
       const page = Number(el.dataset.pageNumber);
-      if (page && el.querySelector(".textLayer")) this.linkPage(page);
+      if (page && (el.querySelector(".textLayer") || this.pages.has(page))) {
+        this.safelyLinkPage(page);
+      }
     }
+  }
+
+  /** Links a page; a failure is logged and leaves other pages and the caller unaffected. */
+  private safelyLinkPage(page: number) {
+    try {
+      this.linkPage(page);
+    } catch (err) {
+      Zotero.debug(`Defn: could not link page ${page}`);
+      Zotero.logError(err);
+    }
+  }
+
+  private unlinkPage(page: number) {
+    this.pages.get(page)?.overlay.remove();
+    this.pages.delete(page);
   }
 
   private linkPage(page: number) {
     const { bridge, store } = this;
     const pageEl = bridge.pageEl(page);
-    const textLayer = pageEl?.querySelector(".textLayer");
-    const viewport = bridge.viewport(page);
+    const textLayer = pageEl?.querySelector<HTMLElement>(".textLayer");
+    // PDF.js hides a page's text layer while re-rendering it, and showing it again relinks it.
+    // Without terms for this document there is nothing to measure.
+    const hasTerms = store.terms.some((t) => isInScope(t, bridge.docId));
+    const viewport = hasTerms && textLayer && !textLayer.hidden ? bridge.viewport(page) : null;
     if (!pageEl || !textLayer || !viewport) {
-      this.pages.get(page)?.overlay.remove();
-      this.pages.delete(page);
+      this.unlinkPage(page);
       return;
     }
     let overlay = pageEl.querySelector<HTMLElement>(":scope > .defn-overlay");

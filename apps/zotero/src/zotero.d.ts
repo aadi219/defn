@@ -11,6 +11,8 @@ interface ZoteroItem {
   parentItem?: ZoteroItem | false;
   getField(field: string): string;
   isPDFAttachment?(): boolean;
+  isAnnotation(): boolean;
+  eraseTx(): Promise<void>;
 }
 
 /** An annotation from the reader, as in `params.annotation` of `renderTextSelectionPopup`. */
@@ -60,6 +62,11 @@ interface ZoteroGlobal {
     ): Promise<ZoteroItem>;
   };
   DataObjectUtilities: { generateKey(): string };
+  Libraries: { getAll(): { libraryID: number }[] };
+  Items: {
+    getByLibraryAndKeyAsync(libraryID: number, key: string): Promise<ZoteroItem | false>;
+  };
+  getMainWindows(): Window[];
   debug(message: string): void;
   logError(error: unknown): void;
 }
@@ -76,7 +83,7 @@ declare const IOUtils: {
     path: string,
     options?: { createAncestors?: boolean; ignoreExisting?: boolean },
   ): Promise<void>;
-  remove(path: string, options?: { ignoreAbsent?: boolean }): Promise<void>;
+  remove(path: string, options?: { ignoreAbsent?: boolean; recursive?: boolean }): Promise<void>;
   exists(path: string): Promise<boolean>;
 };
 
@@ -86,7 +93,24 @@ declare const PathUtils: {
 
 declare const Services: {
   uuid: { generateUUID(): { toString(): string } };
+  prompt: {
+    confirm(parent: Window | null, title: string, text: string): boolean;
+    alert(parent: Window | null, title: string, text: string): void;
+  };
 };
+
+/** XPConnect; available in the plugin's system-principal sandbox. */
+declare const Components: {
+  utils: {
+    /** Returns an Xray for an Xray-waived object (other objects are returned as they are). */
+    unwaiveXrays<T>(object: T): T;
+  };
+};
+
+interface Document {
+  /** XUL documents (the Zotero main window). */
+  createXULElement(tag: string): Element;
+}
 
 declare const ChromeUtils: {
   importESModule<T = Record<string, unknown>>(url: string): T;

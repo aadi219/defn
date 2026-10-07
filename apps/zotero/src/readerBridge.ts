@@ -8,7 +8,8 @@ import type { PointConverter } from "@defn/viewer";
  *
  * Content-side JavaScript (PDF.js's `PDFViewerApplication`) is only read through
  * `wrappedJSObject` and called with numbers; no privileged callbacks are handed to it. Changes to
- * the text layer are observed with a MutationObserver on the DOM instead of PDF.js's event bus.
+ * the text layer are observed with a MutationObserver on the DOM instead of PDF.js's event bus
+ * (see `textLayerChangePage`).
  */
 
 interface ContentViewport {
@@ -45,7 +46,10 @@ export interface ReaderBridge {
   pageEl(page: number): HTMLElement | null;
   /** PDF user space <-> page CSS px at the page's current scale. */
   viewport(page: number): (PointConverter & { scale: number; viewBox: number[] }) | null;
-  /** Calls `onPage` (debounced) for pages whose text layer changed; returns a disposer. */
+  /**
+   * Calls `onPage` (debounced) for pages whose text layer was attached, removed, shown, hidden or
+   * changed; returns a disposer.
+   */
   observeTextLayers(onPage: (page: number) => void): () => void;
   navigate(page: number, rects: readonly PdfRect[]): void;
 }
@@ -61,8 +65,14 @@ function pdfApp(win: Window): ContentPdfApp | undefined {
     ?.PDFViewerApplication;
 }
 
+/**
+ * The PDF view's window as an Xray. Zotero creates `_internalReader` through `wrappedJSObject`, so
+ * everything read through it is Xray-waived, and a waived window has no `wrappedJSObject` (that
+ * only exists on Xrays): `pdfApp` would never find PDF.js and `connect` would time out.
+ */
 function viewWindow(reader: ZoteroReaderInstance): Window | undefined {
-  return reader._internalReader?._primaryView?._iframeWindow;
+  const win = reader._internalReader?._primaryView?._iframeWindow;
+  return win ? Components.utils.unwaiveXrays(win) : undefined;
 }
 
 /** The attachment's title for display: its parent item's title, else its own. */
@@ -138,16 +148,18 @@ export async function connect(reader: ZoteroReaderInstance): Promise<ReaderBridg
       };
       const observer = new (viewDoc.defaultView ?? window).MutationObserver((records) => {
         for (const r of records) {
-          const target = r.target as Element;
-          const pageEl = target.closest?.(".page") as HTMLElement | null;
-          const page = Number(pageEl?.dataset.pageNumber);
-          if (!page || !target.closest?.(".textLayer")) continue;
-          pending.add(page);
+          const page = textLayerChangePage(r);
+          if (page) pending.add(page);
         }
         if (pending.size && !timer) timer = setTimeout(flush, TEXT_LAYER_DEBOUNCE_MS);
       });
       const root = viewDoc.getElementById("viewer") ?? viewDoc.body;
-      observer.observe(root, { childList: true, subtree: true });
+      observer.observe(root, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["hidden"],
+      });
       // Pages already rendered before we started observing.
       for (const el of viewDoc.querySelectorAll<HTMLElement>(".page .textLayer")) {
         const page = Number(el.closest<HTMLElement>(".page")?.dataset.pageNumber);
@@ -165,6 +177,33 @@ export async function connect(reader: ZoteroReaderInstance): Promise<ReaderBridg
       });
     },
   };
+}
+
+const ELEMENT_NODE = 1;
+
+const hasClass = (node: Node, name: string) =>
+  node.nodeType === ELEMENT_NODE && (node as Element).classList.contains(name);
+
+/**
+ * The 1-based page whose text layer a mutation record shows was attached, removed, shown, hidden
+ * or rewritten, or null for anything else. PDF.js renders a text layer off-DOM and appends it to
+ * its page whole, hides it while re-rendering the page (zoom, scrolling back), and moves its
+ * `.endOfContent` helper on every selection change, which is ignored.
+ */
+export function textLayerChangePage(record: MutationRecord): number | null {
+  const target = record.target as Element;
+  let changed: boolean;
+  if (record.type === "attributes") {
+    changed = hasClass(target, "textLayer");
+  } else {
+    const nodes = [...record.addedNodes, ...record.removedNodes];
+    changed = target.closest?.(".textLayer")
+      ? nodes.some((n) => !hasClass(n, "endOfContent"))
+      : nodes.some((n) => hasClass(n, "textLayer"));
+  }
+  if (!changed) return null;
+  const pageEl = target.closest?.(".page") as HTMLElement | null;
+  return Number(pageEl?.dataset.pageNumber) || null;
 }
 
 /** Converts a Zotero position rect `[x1, y1, x2, y2]` (PDF user space) to a PdfRect. */
