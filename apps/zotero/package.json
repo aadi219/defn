@@ -1,6 +1,14 @@
 {
   "name": "@defn/zotero",
   "version": "0.1.0",
+  "description": "Defn for Zotero: mark definitions in the Zotero PDF reader and link their terms.",
+  "license": "MIT",
+  "author": "aadi219",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aadi219/defn.git",
+    "directory": "apps/zotero"
+  },
   "private": true,
   "type": "module",
   "scripts": {

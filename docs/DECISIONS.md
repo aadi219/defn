@@ -370,3 +370,17 @@ Running log of deviations from `PLAN.md` and design decisions made during implem
   then. The time to open is written to Zotero's debug output.
 - **Tools → "Defn: Clear All Data…"** (for testing) deletes, after a confirmation, the store,
   every crop and the highlights Defn mirrored, which are found by key in every library.
+
+## v0.1.0 release metadata
+
+- **Version 0.1.0 for every package**, kept in step by hand (see README → Releasing); history is in
+  `CHANGELOG.md`, and releases are tagged `vX.Y.Z`. The project is MIT-licensed.
+- **The plugin's version comes from `apps/zotero/package.json`.** `addon/manifest.json` has none;
+  the build writes it into the packaged manifest, so the two can't disagree.
+- **Final plugin ID `defn@aadi219.github.io`** (was the placeholder `defn@defn.local`). Zotero treats
+  it as a different plugin, so earlier test installs must be removed by hand; the data directory
+  `<Zotero data dir>/defn/` is unchanged, so their data is kept.
+- **Updates through GitHub Releases.** `update_url` is
+  `…/releases/latest/download/updates.json`. The build writes `dist/updates.json`, which lists the
+  release's `.xpi` under `…/releases/download/vX.Y.Z/` with its SHA-256, and both files are attached
+  to the release.

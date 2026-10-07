@@ -36,17 +36,20 @@ pnpm fixtures   # generate the test PDFs into apps/web/e2e/fixtures
 
 ## Zotero plugin (Zotero 8–9)
 
-```sh
-pnpm --filter @defn/zotero build   # → apps/zotero/dist/defn-0.1.0.xpi
-```
+Download `defn-<version>.xpi` from the [latest release](https://github.com/aadi219/defn/releases/latest),
+then in Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…** and choose it. Zotero then
+updates the plugin from GitHub Releases. To build it yourself:
 
-In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…** and choose the `.xpi`.
+```sh
+pnpm --filter @defn/zotero build   # → apps/zotero/dist/defn-<version>.xpi and updates.json
+```
 
 - Select text in a PDF and click **Mark as definition** in the selection popup. The definition is
   also saved as a Zotero highlight tagged `defn:<kind>` with the comment `term: <label>`.
 - Hover over (or click) an underlined term to see its definition.
 - Data lives in `<Zotero data directory>/defn/`, separate from the web app's storage.
 - Debug messages are prefixed `Defn:` (Help → Debug Output Logging).
+- **Tools → Defn: Clear All Data…** deletes all Defn data, including the highlights it created.
 
 ## Project layout
 
@@ -58,3 +61,18 @@ In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…** and cho
 | `apps/zotero`     | Zotero plugin                                          |
 
 See `PLAN.md` for the design and `docs/DECISIONS.md` for how it was implemented.
+
+## Releasing
+
+The version lives in each `package.json` (all packages share it); the plugin's manifest gets it at
+build time. To release `X.Y.Z`:
+
+1. Set `"version": "X.Y.Z"` in every `package.json` and add a section to `CHANGELOG.md`.
+2. `pnpm check`, then `pnpm --filter @defn/zotero build`.
+3. Commit, tag `vX.Y.Z`, push the tag, and create a GitHub release for it with
+   `apps/zotero/dist/defn-X.Y.Z.xpi` and `apps/zotero/dist/updates.json` attached. Installed plugins
+   find the update through the latest release's `updates.json`.
+
+## License
+
+[MIT](LICENSE)

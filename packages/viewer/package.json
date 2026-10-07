@@ -1,6 +1,14 @@
 {
   "name": "@defn/viewer",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Defn's PDF.js-independent text and linking helpers.",
+  "license": "MIT",
+  "author": "aadi219",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aadi219/defn.git",
+    "directory": "packages/viewer"
+  },
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

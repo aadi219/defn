@@ -1,5 +1,17 @@
 {
   "name": "defn",
+  "version": "0.1.0",
+  "description": "Mark definitions in PDFs and link every other occurrence of the term to them.",
+  "license": "MIT",
+  "author": "aadi219",
+  "homepage": "https://github.com/aadi219/defn#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aadi219/defn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aadi219/defn/issues"
+  },
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.8.1",

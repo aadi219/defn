@@ -1,6 +1,14 @@
 {
   "name": "@defn/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Defn data model, term matching and export format (no DOM).",
+  "license": "MIT",
+  "author": "aadi219",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aadi219/defn.git",
+    "directory": "packages/core"
+  },
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

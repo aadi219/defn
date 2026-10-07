@@ -1,6 +1,14 @@
 {
   "name": "@defn/web",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Defn web app: a PDF reader that links terms to their definitions.",
+  "license": "MIT",
+  "author": "aadi219",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aadi219/defn.git",
+    "directory": "apps/web"
+  },
   "private": true,
   "type": "module",
   "scripts": {

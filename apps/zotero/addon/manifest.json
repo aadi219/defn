@@ -1,13 +1,13 @@
 {
   "manifest_version": 2,
   "name": "Defn",
-  "version": "0.1.0",
   "description": "Mark definitions in PDFs and link every other occurrence of the term to them.",
-  "author": "Defn",
+  "author": "aadi219",
+  "homepage_url": "https://github.com/aadi219/defn",
   "applications": {
     "zotero": {
-      "id": "defn@defn.local",
-      "update_url": "https://example.invalid/defn/updates.json",
+      "id": "defn@aadi219.github.io",
+      "update_url": "https://github.com/aadi219/defn/releases/latest/download/updates.json",
       "strict_min_version": "8.0",
       "strict_max_version": "9.0.*"
     }
